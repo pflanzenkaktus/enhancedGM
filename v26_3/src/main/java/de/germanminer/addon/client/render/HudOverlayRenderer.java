@@ -391,11 +391,13 @@ public class HudOverlayRenderer {
         double speedKmh = tracker.getCurrentSpeedKmh();
         boolean tempomatOn = tracker.isTempomatActive();
         int tempomatKmh = tracker.getTempomatSpeedKmh();
+        boolean tempomatAvailable = tracker.isTempomatAvailable();
 
         if (editorPreview && speedKmh < 1.0) {
             speedKmh = 50.0;
             tempomatOn = true;
             tempomatKmh = 50;
+            tempomatAvailable = true;
         }
 
         BlitzerWarningTracker.BlitzerAlert activeAlert = tracker.getCurrentAlert();
@@ -407,9 +409,9 @@ public class HudOverlayRenderer {
         graphics.pose().scale(cfg.tachoScale, cfg.tachoScale);
 
         if ("DIGITAL".equalsIgnoreCase(cfg.tachoStyle)) {
-            renderDigitalTacho(graphics, mc.font, speedKmh, maxKmh, tempomatOn, tempomatKmh, speedLimit, activeAlert != null);
+            renderDigitalTacho(graphics, mc.font, speedKmh, maxKmh, tempomatOn, tempomatKmh, tempomatAvailable, speedLimit, activeAlert != null);
         } else {
-            renderAnalogTacho(graphics, mc.font, speedKmh, maxKmh, tempomatOn, tempomatKmh, speedLimit);
+            renderAnalogTacho(graphics, mc.font, speedKmh, maxKmh, tempomatOn, tempomatKmh, tempomatAvailable, speedLimit);
         }
 
         graphics.pose().popMatrix();
@@ -422,6 +424,7 @@ public class HudOverlayRenderer {
         int maxKmh,
         boolean tempomatOn,
         int tempomatKmh,
+        boolean tempomatAvailable,
         int speedLimit
     ) {
         int width = 112;
@@ -431,7 +434,7 @@ public class HudOverlayRenderer {
         int radius = 40;
 
         boolean overLimit = speedKmh > speedLimit + 2;
-        int borderColor = overLimit ? 0xFFEF4444 : (tempomatOn ? 0xFF10B981 : 0xFF334155);
+        int borderColor = overLimit ? 0xFFEF4444 : ((tempomatOn && tempomatAvailable) ? 0xFF10B981 : 0xFF334155);
 
         // Instrument housing background
         graphics.fill(0, 0, width, height, 0xD90B1120);
@@ -485,7 +488,7 @@ public class HudOverlayRenderer {
         }
 
         // Draw Tempomat target marker on the outer rim of the analog dial
-        if (tempomatKmh > 0) {
+        if (tempomatAvailable && tempomatKmh > 0) {
             double tRatio = Math.clamp((double) tempomatKmh / maxKmh, 0.0, 1.0);
             double tDeg = startDeg + tRatio * sweepDeg;
             double tRad = Math.toRadians(tDeg - 90.0);
@@ -520,9 +523,14 @@ public class HudOverlayRenderer {
 
         // Bottom Tempomat status bar
         graphics.fill(4, height - 16, width - 4, height - 3, 0xFF1E293B);
-        String tempomatText = tempomatOn
-            ? "§a● TEMPOMAT " + tempomatKmh + " km/h"
-            : "§7○ Tempomat: " + tempomatKmh + " km/h";
+        String tempomatText;
+        if (!tempomatAvailable) {
+            tempomatText = "§8○ Kein Tempomat";
+        } else if (tempomatOn) {
+            tempomatText = "§a● TEMPOMAT " + tempomatKmh + " km/h";
+        } else {
+            tempomatText = "§7○ Tempomat: " + tempomatKmh + " km/h";
+        }
         graphics.pose().pushMatrix();
         graphics.pose().translate(cx, height - 12);
         graphics.pose().scale(0.8f, 0.8f);
@@ -537,6 +545,7 @@ public class HudOverlayRenderer {
         int maxKmh,
         boolean tempomatOn,
         int tempomatKmh,
+        boolean tempomatAvailable,
         int speedLimit,
         boolean hasActiveAlert
     ) {
@@ -545,7 +554,7 @@ public class HudOverlayRenderer {
         int roundedSpeed = (int) Math.round(speedKmh);
         boolean overLimit = roundedSpeed > speedLimit + 2;
 
-        int accentColor = overLimit ? 0xFFEF4444 : (tempomatOn ? 0xFF10B981 : 0xFF38BDF8);
+        int accentColor = overLimit ? 0xFFEF4444 : ((tempomatOn && tempomatAvailable) ? 0xFF10B981 : 0xFF38BDF8);
 
         // Card background & border
         graphics.fill(0, 0, width, height, 0xD90B1120);
@@ -575,21 +584,31 @@ public class HudOverlayRenderer {
         int boxY = 16;
         int boxW = width - boxX - 5;
         int boxH = 22;
-        int boxBorder = tempomatOn ? 0xFF10B981 : 0xFF334155;
+        int boxBorder = (!tempomatAvailable || !tempomatOn) ? 0xFF334155 : 0xFF10B981;
         graphics.fill(boxX, boxY, boxX + boxW, boxY + boxH, 0xFF0F172A);
         graphics.outline(boxX, boxY, boxW, boxH, boxBorder);
 
+        String statusHeader;
+        if (!tempomatAvailable) {
+            statusHeader = "§8KEIN TEMPOMAT";
+        } else if (tempomatOn) {
+            statusHeader = "§aTEMPOMAT AN";
+        } else {
+            statusHeader = "§7TEMPOMAT AUS";
+        }
+
         graphics.pose().pushMatrix();
         graphics.pose().translate(boxX + boxW / 2.0f, boxY + 3.0f);
-        graphics.pose().scale(0.75f, 0.75f);
-        graphics.centeredText(font, tempomatOn ? "§aTEMPOMAT AN" : "§7TEMPOMAT AUS", 0, 0, 0xFFF8FAFC);
+        graphics.pose().scale(0.70f, 0.70f);
+        graphics.centeredText(font, statusHeader, 0, 0, 0xFFF8FAFC);
         graphics.pose().popMatrix();
 
-        String tVal = tempomatKmh + " km/h";
+        String tVal = !tempomatAvailable ? "§8N/A" : (tempomatKmh + " km/h");
+        int tValColor = !tempomatAvailable ? 0xFF64748B : (tempomatOn ? 0xFF10B981 : 0xFF94A3B8);
         graphics.pose().pushMatrix();
         graphics.pose().translate(boxX + boxW / 2.0f, boxY + 12.0f);
         graphics.pose().scale(0.85f, 0.85f);
-        graphics.centeredText(font, tVal, 0, 0, tempomatOn ? 0xFF10B981 : 0xFF94A3B8);
+        graphics.centeredText(font, tVal, 0, 0, tValColor);
         graphics.pose().popMatrix();
 
         // Bottom LED speed progress bar + Tempomat target notch
@@ -606,7 +625,7 @@ public class HudOverlayRenderer {
         }
 
         // Draw Tempomat target marker line on the progress bar
-        if (tempomatKmh > 0) {
+        if (tempomatAvailable && tempomatKmh > 0) {
             float tRatio = (float) Math.clamp((double) tempomatKmh / maxKmh, 0.0, 1.0);
             int tx = barX + Math.round(barW * tRatio);
             int markerColor = tempomatOn ? 0xFF10B981 : 0xFF94A3B8;

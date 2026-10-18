@@ -256,8 +256,19 @@ public class GMAddonClient implements ClientModInitializer {
             pendingTempomatToggle = false;
             pendingTempomatDeltaSteps = 0;
         } else if (VersionCompat.getScreen(client) == null) {
+            // Cruise control auto-disable when braking (pressing 'S')
+            boolean isBraking = client.options.keyDown.isDown();
+            if (isBraking && blitzerTracker.isTempomatActive()) {
+                blitzerTracker.disengageTempomatOnBrake();
+                pendingTempomatToggle = false;
+                pendingTempomatDeltaSteps = 0;
+            }
+
             boolean toggleDown = tempomatToggleKey.isDown();
             if (toggleDown && !wasTempomatToggleDown) {
+                if (!blitzerTracker.isTempomatAvailable()) {
+                    blitzerTracker.setTempomatAvailable(true);
+                }
                 blitzerTracker.onTempomatToggleCommand();
                 pendingTempomatToggle = !pendingTempomatToggle;
             }

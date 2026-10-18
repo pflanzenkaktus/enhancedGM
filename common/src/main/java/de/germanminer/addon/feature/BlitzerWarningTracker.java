@@ -30,6 +30,10 @@ public class BlitzerWarningTracker {
         "tempomat.*(?:aktiviert|eingeschaltet|an\\b|on\\b|gesetzt|erhöht|reduziert|gestellt)",
         Pattern.CASE_INSENSITIVE
     );
+    private static final Pattern TEMPOMAT_UNAVAILABLE_PATTERN = Pattern.compile(
+        "(?:kein(?:en)?\\s+tempomat|tempomat.*(?:nicht\\s+(?:verf(?:ü|ue)gbar|unterst(?:ü|ue)tzt|m(?:ö|oe)glich)|existiert\\s+nicht|fehlt)|dieses\\s+fahrzeug.*(?:kein|ohne)\\s+tempomat)",
+        Pattern.CASE_INSENSITIVE
+    );
 
     // Matches e.g. "in einer 70 Zone", "in einer 70er-Zone", "in einer 70 km/h Zone", "Erlaubt: 70"
     private static final Pattern ZONE_LIMIT_PATTERN = Pattern.compile(
@@ -74,6 +78,7 @@ public class BlitzerWarningTracker {
 
     private boolean inVehicleState = false;
     private boolean tempomatActive = false;
+    private boolean tempomatAvailable = true;
     private int tempomatSpeedKmh = 50;
 
     private BlitzerAlert currentAlert = null;
@@ -153,6 +158,18 @@ public class BlitzerWarningTracker {
         if (!lower.contains("tempomat")) {
             return;
         }
+
+        if (TEMPOMAT_UNAVAILABLE_PATTERN.matcher(clean).find()
+            || lower.contains("kein tempomat")
+            || lower.contains("keinen tempomat")
+            || lower.contains("nicht verfügbar")
+            || lower.contains("nicht verfuegbar")
+            || lower.contains("ohne tempomat")) {
+            tempomatAvailable = false;
+            tempomatActive = false;
+            return;
+        }
+
         boolean explicitlyOff = TEMPOMAT_OFF_PATTERN.matcher(clean).find()
             || lower.contains("deaktiviert")
             || lower.contains("ausgeschaltet")
@@ -165,12 +182,17 @@ public class BlitzerWarningTracker {
             || lower.contains("(an)")
             || lower.contains("aktiv");
 
+        if (explicitlyOn) {
+            tempomatAvailable = true;
+        }
+
         Matcher speedMatcher = TEMPOMAT_SPEED_PATTERN.matcher(clean);
         if (speedMatcher.find()) {
             try {
                 int parsed = Integer.parseInt(speedMatcher.group(1));
                 if (parsed >= 5 && parsed <= 300) {
                     tempomatSpeedKmh = parsed;
+                    tempomatAvailable = true;
                     if (explicitlyOff) {
                         tempomatActive = false;
                     } else if (explicitlyOn || !lower.contains("status")) {
@@ -185,6 +207,7 @@ public class BlitzerWarningTracker {
             tempomatActive = false;
         } else if (explicitlyOn) {
             tempomatActive = true;
+            tempomatAvailable = true;
         }
     }
 
@@ -192,11 +215,30 @@ public class BlitzerWarningTracker {
      * Directly synchronizes Tempomat state read from the server-provided vehicle GUI menu or HUD.
      */
     public void syncTempomatFromServerUi(Boolean active, Integer speedKmh) {
+        this.tempomatAvailable = true;
         if (speedKmh != null && speedKmh >= 5 && speedKmh <= 300) {
             this.tempomatSpeedKmh = speedKmh;
         }
         if (active != null) {
             this.tempomatActive = active;
+        }
+    }
+
+    /**
+     * Disengages Cruise Control when the player taps the brake key ('S').
+     */
+    public void disengageTempomatOnBrake() {
+        this.tempomatActive = false;
+    }
+
+    public boolean isTempomatAvailable() {
+        return tempomatAvailable;
+    }
+
+    public void setTempomatAvailable(boolean available) {
+        this.tempomatAvailable = available;
+        if (!available) {
+            this.tempomatActive = false;
         }
     }
 
@@ -224,6 +266,10 @@ public class BlitzerWarningTracker {
     }
 
     public void onTempomatToggleCommand() {
+        if (!tempomatAvailable) {
+            tempomatActive = false;
+            return;
+        }
         tempomatActive = !tempomatActive;
         if (tempomatActive && tempomatSpeedKmh <= 0) {
             int currentRounded = (int) Math.round(getCurrentSpeedKmh() / 10.0) * 10;
@@ -232,6 +278,7 @@ public class BlitzerWarningTracker {
     }
 
     public void onTempomatPlusCommand() {
+        if (!tempomatAvailable) return;
         if (!tempomatActive) {
             tempomatActive = true;
         }
@@ -239,6 +286,7 @@ public class BlitzerWarningTracker {
     }
 
     public void onTempomatMinusCommand() {
+        if (!tempomatAvailable) return;
         if (!tempomatActive) {
             tempomatActive = true;
         }
@@ -247,6 +295,18 @@ public class BlitzerWarningTracker {
 
     public boolean isTempomatActive() {
         return tempomatActive;
+    }
+
+    public void setTempomatActive(boolean active) {
+        if (active && !tempomatAvailable) {
+            this.tempomatActive = false;
+            return;
+        }
+        this.tempomatActive = active;
+    }
+
+    public void setTempomatSpeedKmh(int speedKmh) {
+        this.tempomatSpeedKmh = Math.clamp(speedKmh, 10, 250);
     }
 
     public int getTempomatSpeedKmh() {
@@ -271,6 +331,7 @@ public class BlitzerWarningTracker {
     public void updatePlayerState(double x, double y, double z, float playerYaw, boolean inVehicle, List<SpeedCamera> cameras) {
         if (this.inVehicleState && !inVehicle) {
             this.tempomatActive = false;
+            this.tempomatAvailable = true;
         }
         this.inVehicleState = inVehicle;
 

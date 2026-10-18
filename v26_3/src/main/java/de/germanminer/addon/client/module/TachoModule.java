@@ -14,6 +14,9 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.BossEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemLore;
@@ -47,6 +50,9 @@ public class TachoModule implements ClientFeatureModule {
     private String lastLoggedBossBar = "";
     private int steadyCruiseTicks = 0;
     private int lastSteadyTargetTenKmh = -1;
+    private int idleCruiseTicks = 0;
+    private double speedAtIdleStart = 0.0;
+    private boolean telemetryConfirmedCruise = false;
 
     public TachoModule(GMAddonClient addon) {
         this.addon = addon;
@@ -223,16 +229,165 @@ public class TachoModule implements ClientFeatureModule {
         }
         boolean inVehicle = client.player.isPassenger() || client.player.getVehicle() != null;
         if (inVehicle) {
+            inspectVehicleEntityForTempomatCapability(addon, client);
             inspectBossBarsForTempomat(addon, client);
             inspectHotbarForTempomat(addon, client);
             checkSteadyCruiseAutoSync(addon, client);
+            checkAutonomousCruiseTelemetry(addon, client);
         } else {
             steadyCruiseTicks = 0;
             lastSteadyTargetTenKmh = -1;
+            idleCruiseTicks = 0;
+            speedAtIdleStart = 0.0;
+            telemetryConfirmedCruise = false;
         }
         // Always inspect open server container menus (e.g. /vehicles menu) to stay 100% in sync
         if (de.germanminer.addon.client.compat.VersionCompat.getScreen(client) instanceof AbstractContainerScreen<?> containerScreen) {
             inspectContainerScreenForTempomat(addon, containerScreen);
+        }
+    }
+
+    /**
+     * Inspects the vehicle entity, vehicle type, and any equipped custom 3D model items (e.g. armor stand helmet)
+     * to detect whether the vehicle supports cruise control (motorized cars/trucks/bikes vs bicycles, skateboards, wheelchairs).
+     */
+    private void inspectVehicleEntityForTempomatCapability(GMAddonClient addon, Minecraft client) {
+        try {
+            var tracker = addon.getBlitzerTracker();
+            var vehicle = client.player.getVehicle();
+            var root = client.player.getRootVehicle();
+            Entity target = root != null ? root : vehicle;
+            if (target == null) return;
+
+            // Check non-motor entity type
+            String typeId = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString().toLowerCase(Locale.ROOT);
+            if (typeId.contains("boat") || typeId.contains("minecart") || typeId.contains("horse")
+                || typeId.contains("donkey") || typeId.contains("mule") || typeId.contains("pig")
+                || typeId.contains("strider") || typeId.contains("camel")) {
+                tracker.setTempomatAvailable(false);
+                return;
+            }
+
+            // Check custom vehicle entity names
+            if (isUnsupportedVehicleName(target.getName().getString())
+                || (target.getCustomName() != null && isUnsupportedVehicleName(target.getCustomName().getString()))) {
+                tracker.setTempomatAvailable(false);
+                return;
+            }
+
+            // Check LivingEntity equipment (ArmorStand helmet/head item)
+            if (target instanceof LivingEntity living) {
+                ItemStack head = living.getItemBySlot(EquipmentSlot.HEAD);
+                if (head != null && !head.isEmpty()) {
+                    String headText = extractItemText(head);
+                    if (isUnsupportedVehicleName(headText)) {
+                        tracker.setTempomatAvailable(false);
+                        return;
+                    }
+                }
+            }
+
+            // Also inspect passenger entities of the vehicle assembly
+            if (root != null) {
+                for (Entity passenger : root.getPassengers()) {
+                    if (passenger != null && passenger != client.player) {
+                        if (passenger.getCustomName() != null && isUnsupportedVehicleName(passenger.getCustomName().getString())) {
+                            tracker.setTempomatAvailable(false);
+                            return;
+                        }
+                        if (passenger instanceof LivingEntity livingPass) {
+                            ItemStack head = livingPass.getItemBySlot(EquipmentSlot.HEAD);
+                            if (head != null && !head.isEmpty() && isUnsupportedVehicleName(extractItemText(head))) {
+                                tracker.setTempomatAvailable(false);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static boolean isUnsupportedVehicleName(String name) {
+        if (name == null || name.isBlank()) return false;
+        String lower = name.toLowerCase(Locale.ROOT);
+        return lower.contains("fahrrad")
+            || lower.contains("bike")
+            || lower.contains("bmx")
+            || lower.contains("mountainbike")
+            || lower.contains("rennrad")
+            || lower.contains("citybike")
+            || lower.contains("drahtesel")
+            || lower.contains("skateboard")
+            || lower.contains("longboard")
+            || lower.contains("tretroller")
+            || lower.contains("rollstuhl")
+            || lower.contains("wheelchair")
+            || lower.contains("e-scooter")
+            || (lower.contains("scooter") && !lower.contains("motor"))
+            || (lower.contains("roller") && !lower.contains("motorroller"));
+    }
+
+    /**
+     * Autonomous cruise telemetry monitor:
+     * When Tempomat is active and the player is pressing nothing (no throttle 'W' and no brake 'S'):
+     * 1. If the vehicle gets faster on its own (speed increases without throttle) or holds cruise speed,
+     *    autonomous cruise is confirmed active and supported.
+     * 2. If the vehicle instead rapidly decelerates / coasts to a halt under friction,
+     *    Tempomat is not active/supported on this vehicle and is automatically switched to disabled.
+     */
+    private void checkAutonomousCruiseTelemetry(GMAddonClient addon, Minecraft client) {
+        var tracker = addon.getBlitzerTracker();
+        if (!tracker.isTempomatActive() || addon.hasPendingTempomatCommands()) {
+            idleCruiseTicks = 0;
+            return;
+        }
+
+        // Check if player is pressing nothing (no throttle 'W', no brake 'S')
+        boolean pressingNothing = !client.options.keyUp.isDown() && !client.options.keyDown.isDown();
+        if (!pressingNothing) {
+            idleCruiseTicks = 0;
+            speedAtIdleStart = tracker.getCurrentSpeedKmh();
+            return;
+        }
+
+        double currentSpeed = tracker.getCurrentSpeedKmh();
+        double targetSpeed = tracker.getTempomatSpeedKmh();
+
+        idleCruiseTicks++;
+        if (idleCruiseTicks == 1) {
+            speedAtIdleStart = currentSpeed;
+            return;
+        }
+
+        // Rule 1: Vehicle gets faster even when pressing nothing! (Autonomous acceleration)
+        if (currentSpeed > (speedAtIdleStart + 1.2) && currentSpeed > 3.0) {
+            telemetryConfirmedCruise = true;
+            tracker.setTempomatAvailable(true);
+            return;
+        }
+
+        // Rule 2: Vehicle actively maintains cruise speed around target for over 20 ticks (~1.0s)
+        if (currentSpeed >= 12.0 && Math.abs(currentSpeed - targetSpeed) <= 3.5) {
+            if (idleCruiseTicks >= 20) {
+                telemetryConfirmedCruise = true;
+                tracker.setTempomatAvailable(true);
+            }
+            return;
+        }
+
+        // Rule 3: Deceleration & friction coast-down check (Vehicle is NOT cruising)
+        // If cruise was not confirmed, the vehicle was in motion (>= 10 km/h), and speed has dropped significantly
+        // (> 6 km/h drop over 35 ticks, falling well below target), cruise control is not driving this vehicle.
+        if (!telemetryConfirmedCruise && speedAtIdleStart >= 10.0) {
+            if (idleCruiseTicks >= 35 && currentSpeed < (speedAtIdleStart - 6.0) && currentSpeed < (targetSpeed - 5.0)) {
+                LOGGER.info("[Cruise Telemetry] Vehicle decelerated from {:.1f} to {:.1f} km/h with no throttle. Cruise control unavailable/inactive.",
+                    speedAtIdleStart, currentSpeed);
+                tracker.setTempomatActive(false);
+                tracker.setTempomatAvailable(false);
+                idleCruiseTicks = 0;
+            }
         }
     }
 

@@ -177,6 +177,37 @@ class CoreSystemsTest {
 
         tracker.onChatMessageForTempomat("§cTempomat deaktiviert.");
         assertFalse(tracker.isTempomatActive());
+
+        // Test brake auto-disengage ('S')
+        tracker.onTempomatToggleCommand();
+        assertTrue(tracker.isTempomatActive());
+        tracker.disengageTempomatOnBrake();
+        assertFalse(tracker.isTempomatActive());
+
+        // Test vehicle unsupported detection via chat
+        assertTrue(tracker.isTempomatAvailable());
+        tracker.onChatMessageForTempomat("§cDieses Fahrzeug besitzt keinen Tempomat!");
+        assertFalse(tracker.isTempomatAvailable());
+        assertFalse(tracker.isTempomatActive());
+
+        // When unavailable, toggle command should not activate
+        tracker.onTempomatToggleCommand();
+        assertFalse(tracker.isTempomatActive());
+
+        // Supported vehicle message re-enables availability
+        tracker.onChatMessageForTempomat("§aTempomat auf 60 km/h aktiviert.");
+        assertTrue(tracker.isTempomatAvailable());
+        assertTrue(tracker.isTempomatActive());
+        assertEquals(60, tracker.getTempomatSpeedKmh());
+
+        // Another unsupported variant
+        tracker.onChatMessageForTempomat("§cTempomat ist für dieses Fahrzeug nicht verfügbar.");
+        assertFalse(tracker.isTempomatAvailable());
+        assertFalse(tracker.isTempomatActive());
+
+        // Leaving vehicle resets availability for next vehicle
+        tracker.updatePlayerState(0.0, 64.0, 0.0, 0.0f, false, List.of(cam));
+        assertTrue(tracker.isTempomatAvailable());
     }
 
     @Test
