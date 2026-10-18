@@ -79,7 +79,7 @@ public class DamageLogModule implements ClientFeatureModule {
 
             @Override
             public int getBaseWidth() {
-                return 165;
+                return 175;
             }
 
             @Override

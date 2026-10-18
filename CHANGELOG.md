@@ -23,6 +23,12 @@ All notable changes to the **GermanMiner Addon** are documented in this file.
   - Added reflection-free compatibility layer supporting Minecraft **26.1.2 through 26.3**.
   - Bridges screen management (`setScreen`, `getScreen`), key input polling (`isKeyDown`, `isShiftDown`), and boss bar overlay access across breaking Minecraft 26 minor updates.
 
+### Fixed
+- **Spawnschutz & Notwehr HUD Widget Overlap**:
+  - Fixed an issue where `"Login-Spawnschutz"` or long status labels collided and overlapped with the right-aligned countdown time (`14.2s`).
+  - Increased base width from `152px` to `180px` (`SpawnProtectionModule`) and `165px` to `175px` (`DamageLogModule`).
+  - Added dynamic width expansion with a guaranteed `16px` minimum padding between label and countdown timer so text never overlaps regardless of reason length or attacker name.
+
 ---
 
 ## [0.1.0-BETA] — 2026-10-18

@@ -288,12 +288,16 @@ public class HudOverlayRenderer {
         double remainingSec = active ? tracker.getRemainingSeconds() : cfg.spawnProtectionSeconds * 0.72;
         float progress = active ? tracker.getProgressRatio() : 0.72f;
         String label = active ? tracker.getTriggerReason() : "Spawnschutz (Vorschau)";
+        String timeStr = String.format(Locale.ROOT, "%.1fs", remainingSec);
+
+        int minWidth = 180;
+        int neededWidth = 30 + font.width(label) + 16 + font.width(timeStr) + 6;
+        int width = Math.max(minWidth, neededWidth);
+        int height = 34;
 
         int x = cfg.spawnProtectionX;
         int y = cfg.spawnProtectionY;
         float scale = cfg.spawnProtectionScale;
-        int width = 152;
-        int height = 34;
 
         graphics.pose().pushMatrix();
         graphics.pose().translate(x, y);
@@ -309,7 +313,6 @@ public class HudOverlayRenderer {
         graphics.centeredText(font, "S", 15, 11, accentColor);
 
         graphics.text(font, label, 30, 6, 0xFFF8FAFC, true);
-        String timeStr = String.format(Locale.ROOT, "%.1fs", remainingSec);
         graphics.text(font, timeStr, width - font.width(timeStr) - 6, 6, accentColor, true);
 
         int barX = 30;
@@ -337,14 +340,22 @@ public class HudOverlayRenderer {
         double remainingSec = active ? tracker.getRemainingNotwehrSeconds() : 24.5;
         float progress = active ? tracker.getNotwehrProgressRatio() : 0.82f;
         String attacker = active ? tracker.getActiveAttackerName() : "HerrSieger";
+        String timeStr = String.format(Locale.ROOT, "%.1fs", remainingSec);
+        String subLine = "§7Gegen: §f" + attacker;
+
+        Font font = mc.font;
+        int minWidth = 175;
+        int neededWidth = Math.max(
+            30 + font.width("§c§lNotwehr erlaubt") + 16 + font.width(timeStr) + 6,
+            30 + font.width(subLine) + 8
+        );
+        int width = Math.max(minWidth, neededWidth);
+        int height = 38;
 
         int x = cfg.notwehrWidgetX;
         int y = cfg.notwehrWidgetY;
         float scale = cfg.notwehrWidgetScale;
-        int width = 165;
-        int height = 38;
 
-        Font font = mc.font;
         graphics.pose().pushMatrix();
         graphics.pose().translate((float) x, (float) y);
         graphics.pose().scale(scale, scale);
@@ -359,10 +370,8 @@ public class HudOverlayRenderer {
         graphics.centeredText(font, "⚔", 15, 11, accentColor);
 
         graphics.text(font, "§c§lNotwehr erlaubt", 30, 5, 0xFFF8FAFC, true);
-        String timeStr = String.format(Locale.ROOT, "%.1fs", remainingSec);
         graphics.text(font, timeStr, width - font.width(timeStr) - 6, 5, accentColor, true);
 
-        String subLine = "§7Gegen: §f" + attacker;
         graphics.text(font, subLine, 30, 15, 0xFFCBD5E1, false);
 
         int barX = 30;

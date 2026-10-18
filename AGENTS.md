@@ -78,3 +78,11 @@ Full step-by-step instructions and code templates are in **[docs/PLUGIN_AND_MODU
    ```powershell
    .\gradlew.bat test build; Copy-Item "e:\GM-Addon\v26_3\build\libs\gm-addon-1.0.0+26.3.jar" "C:\Users\PflanzenK\AppData\Roaming\ModrinthApp\profiles\Fabric 26.3\mods\gm-addon-1.0.0+26.3.jar" -Force
    ```
+
+---
+
+## 5. Development Workflow & Releases (Rule for LLMs)
+
+- **Always maintain `CHANGELOG.md`**: Whenever making code changes, feature additions, or bug fixes, record them with clear descriptions under `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md).
+- **Always provide a detailed description/changelog in your user responses**: Clearly summarize every modified file, rationale, and functionality change.
+- **Keep changes bundled on the `dev` branch**: Only merge to `main` and release on GitHub when the user explicitly requests it.

@@ -69,7 +69,7 @@ public class SpawnProtectionModule implements ClientFeatureModule {
 
             @Override
             public int getBaseWidth() {
-                return 152;
+                return 180;
             }
 
             @Override
