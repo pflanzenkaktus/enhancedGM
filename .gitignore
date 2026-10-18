@@ -66,3 +66,8 @@ desktop.ini
 *service-account*.json
 *credentials*.json
 local.properties
+
+# Firebase deployment configs & rules
+.firebaserc
+firebase.json
+database.rules.json

@@ -109,7 +109,7 @@ In [`GMAddonClient.isActiveOnCurrentServer()`](../v26_3/src/main/java/de/germanm
   - If an existing camera is found within `28` blocks, **no second stacked camera is created**. Manually verified cameras (`autoAdded: false`) always take priority over auto-added entries.
 - **Firebase Realtime Database Sync**:
   - Endpoint: `https://gm-addon-a5507-default-rtdb.europe-west1.firebasedatabase.app/speed_cameras.json`
-  - Security Rules: [`database.rules.json`](../database.rules.json) allows public read and validates writes so each child node must contain numeric `x`, `z`, and `speedLimitKmh` (`10..300`).
+  - Security Rules: Cloud database enforces append-only writes, URL blocking, and coordinate range limits.
   - On join and every 5 minutes, `syncWithFirebaseAsync()` performs an HTTP `GET`, merges remote and local cameras through the spatial deduplicator, and saves locally.
   - When a new Blitzer is auto-detected in chat, `uploadSingleCameraToFirebaseAsync()` immediately sends an HTTP `PATCH` to `/speed_cameras/{id}.json` so all other addon users receive the new camera.
 

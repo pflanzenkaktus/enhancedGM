@@ -75,8 +75,6 @@ gm-addon/
 ├── build.gradle                 # Root Gradle build (Java 25 toolchain, JUnit 5)
 ├── settings.gradle              # Multi-project setup (:common, :v26_3)
 ├── gradle.properties            # Minecraft 26.3, Fabric Loader 0.20.0, Fabric API 0.163.0+26.3
-├── firebase.json                # Firebase CLI config for Realtime Database rules
-├── database.rules.json          # Firebase Realtime Database security & validation rules
 ├── common/                      # Version-independent core logic, models, networking & unit tests
 │   └── src/
 │       ├── main/java/de/germanminer/addon/
@@ -114,8 +112,3 @@ The compiled mod JAR will be located at `v26_3/build/libs/gm-addon-0.1.0-BETA+26
 
 ### 2. Install to Minecraft Fabric Profile
 Copy the generated JAR from `v26_3/build/libs/` into your Minecraft profile's `mods/` directory.
-
-### 3. Deploy Firebase Realtime Database Security Rules (Admin)
-```bash
-firebase deploy --only database
-```
