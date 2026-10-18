@@ -1,0 +1,50 @@
+{
+  "rules": {
+    "speed_cameras": {
+      ".read": true,
+      "$cameraId": {
+        ".write": "!data.exists()",
+        ".validate": "newData.hasChildren(['name', 'x', 'z', 'speedLimitKmh']) && $cameraId.matches(/^[A-Za-z0-9_-]{1,48}$/)",
+        "id": {
+          ".validate": "newData.isString() && newData.val() === $cameraId"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 55 && newData.val().matches(/^[A-Za-z0-9ÄÖÜäöüß (),._-]{2,55}$/) && !newData.val().toLowerCase().matches(/.*(http|www|discord|\\.gg|\\.com|\\.de|\\.net|\\.org).*/)"
+        },
+        "x": {
+          ".validate": "newData.isNumber() && newData.val() >= -20000 && newData.val() <= 20000"
+        },
+        "y": {
+          ".validate": "newData.isNumber() && newData.val() >= -128 && newData.val() <= 400"
+        },
+        "z": {
+          ".validate": "newData.isNumber() && newData.val() >= -20000 && newData.val() <= 20000"
+        },
+        "speedLimitKmh": {
+          ".validate": "newData.isNumber() && newData.val() >= 10 && newData.val() <= 260"
+        },
+        "facingYaw": {
+          ".validate": "newData.isNumber() && newData.val() >= -360 && newData.val() <= 360"
+        },
+        "directionDegrees": {
+          ".validate": "newData.isNumber() && newData.val() >= -360 && newData.val() <= 360"
+        },
+        "triggerRadius": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300"
+        },
+        "autoAdded": {
+          ".validate": "newData.isBoolean()"
+        },
+        "addedBy": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{2,24}$/)"
+        },
+        "createdAtEpochMs": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}

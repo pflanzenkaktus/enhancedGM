@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "gm-addon",
+  "version": "${version}",
+  "name": "enhancedGM",
+  "description": "Modulares Client-Addon für GermanMiner.de (enhancedGM): BlueMap Minimap & Fullscreen-Karte, Blitzer-Warnsystem mit Firebase-Sync, Tacho & Tempomat, 30s Notwehr-Prüfer und magnetischer HUD-Editor.",
+  "authors": [
+    "GM-Addon"
+  ],
+  "contact": {
+    "homepage": "https://germanminer.de"
+  },
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "de.germanminer.addon.client.GMAddonClient"
+    ],
+    "modmenu": [
+      "de.germanminer.addon.client.compat.GMModMenuIntegration"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

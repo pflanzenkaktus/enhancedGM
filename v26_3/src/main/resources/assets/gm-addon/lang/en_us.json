@@ -1,0 +1,12 @@
+{
+  "category.gm-addon.general": "enhancedGM",
+  "key.gm-addon.open_map": "Open enhancedGM Map (Fullscreen)",
+  "key.gm-addon.open_hud_editor": "Open HUD Layout Editor (Move Widgets)",
+  "key.gm-addon.open_settings": "Open enhancedGM Settings",
+  "key.gm-addon.open_damagelog": "Open Damage-Log & Self-Defense Reviewer",
+  "key.gm-addon.zoom_in": "Minimap Zoom In (+)",
+  "key.gm-addon.zoom_out": "Minimap Zoom Out (-)",
+  "key.gm-addon.tempomat_toggle": "Vehicle: Toggle Cruise Control (/vehicles tempomat)",
+  "key.gm-addon.tempomat_plus": "Vehicle: Cruise Control +10 km/h (/vehicles tempomat-plus)",
+  "key.gm-addon.tempomat_minus": "Vehicle: Cruise Control -10 km/h (/vehicles tempomat-minus)"
+}

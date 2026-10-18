@@ -1,0 +1,12 @@
+{
+  "category.gm-addon.general": "enhancedGM",
+  "key.gm-addon.open_map": "enhancedGM Karte öffnen (Fullscreen)",
+  "key.gm-addon.open_hud_editor": "HUD-Layout-Editor öffnen (Widgets verschieben)",
+  "key.gm-addon.open_settings": "enhancedGM Einstellungen öffnen",
+  "key.gm-addon.open_damagelog": "Damage-Log & Notwehr-Prüfer öffnen",
+  "key.gm-addon.zoom_in": "Minimap Heranzoomen (+)",
+  "key.gm-addon.zoom_out": "Minimap Herauszoomen (-)",
+  "key.gm-addon.tempomat_toggle": "Fahrzeug: Tempomat An/Aus (/vehicles tempomat)",
+  "key.gm-addon.tempomat_plus": "Fahrzeug: Tempomat +10 km/h (/vehicles tempomat-plus)",
+  "key.gm-addon.tempomat_minus": "Fahrzeug: Tempomat -10 km/h (/vehicles tempomat-minus)"
+}

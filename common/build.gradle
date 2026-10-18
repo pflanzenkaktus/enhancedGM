@@ -1,0 +1,28 @@
+plugins {
+    id 'java-library'
+}
+
+base {
+    archivesName = "${rootProject.archives_base_name}-common"
+}
+
+dependencies {
+    api 'com.google.code.gson:gson:2.11.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    // Target Java 21 in :common so future backports (e.g., 1.21.10) can consume :common directly
+    it.options.release = 21
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+test {
+    useJUnitPlatform()
+}
