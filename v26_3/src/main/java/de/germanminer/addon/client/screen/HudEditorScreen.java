@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
@@ -20,7 +21,7 @@ import java.util.Locale;
  */
 public class HudEditorScreen extends Screen {
     private static final int BOTTOM_BAR_HEIGHT = 38;
-    private static final int SNAP_THRESHOLD = 7;
+    private static final int SNAP_THRESHOLD = 12;
     private static final int SCREEN_MARGIN = 10;
     private static final int WIDGET_GAP = 6;
 
@@ -40,6 +41,7 @@ public class HudEditorScreen extends Screen {
     private double dragOffsetX = 0.0;
     private double dragOffsetY = 0.0;
     private boolean snappingEnabled = true;
+    private boolean shiftHeld = false;
     private final List<SnapGuideLine> activeGuides = new ArrayList<>();
 
     public HudEditorScreen(GMAddonClient addon, Screen parentScreen) {
@@ -185,7 +187,7 @@ public class HudEditorScreen extends Screen {
     }
 
     private boolean isShiftDown() {
-        return de.germanminer.addon.client.compat.VersionCompat.isShiftDown();
+        return shiftHeld;
     }
 
     private void updateDraggedWidgetPosition(double mouseX, double mouseY) {
@@ -263,16 +265,16 @@ public class HudEditorScreen extends Screen {
 
         // 3. Widget-to-Widget Alignment & Adjacent Docking (Cyan guide)
         for (HudWidgetDescriptor other : addon.getModuleManager().getHudWidgets()) {
-            if (other == activeDragWidget) continue;
+            if (other == activeDragWidget || !other.isEnabled()) continue;
             int ox = other.getX();
             int oy = other.getY();
             int ow = other.getScaledWidth();
             int oh = other.getScaledHeight();
 
-            int spanTop = Math.min(rawY, oy) - 4;
-            int spanBottom = Math.max(rawY + wh, oy + oh) + 4;
-            int spanLeft = Math.min(rawX, ox) - 4;
-            int spanRight = Math.max(rawX + ww, ox + ow) + 4;
+            int spanTop = Math.clamp(Math.min(rawY, oy) - 4, 0, usableH);
+            int spanBottom = Math.clamp(Math.max(rawY + wh, oy + oh) + 4, 0, usableH);
+            int spanLeft = Math.clamp(Math.min(rawX, ox) - 4, 0, this.width);
+            int spanRight = Math.clamp(Math.max(rawX + ww, ox + ow) + 4, 0, this.width);
 
             // X alignments: Left-to-Left, Right-to-Right, Center-to-Center, Dock-Right, Dock-Left
             int[][] xCandidates = {
@@ -326,15 +328,16 @@ public class HudEditorScreen extends Screen {
     }
 
     private static boolean isLeftButton(MouseButtonEvent event) {
-        return event.button() == 0 || event.button() == 1;
+        return event.button() == 0;
     }
 
     private static boolean isRightButton(MouseButtonEvent event) {
-        return event.button() == 2 || event.button() == 3;
+        return event.button() == 1;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        shiftHeld = event.hasShiftDown();
         if (super.mouseClicked(event, doubleClick)) {
             return true;
         }
@@ -367,6 +370,7 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        shiftHeld = event.hasShiftDown();
         if (activeDragWidget != null && isLeftButton(event)) {
             activeDragWidget = null;
             activeGuides.clear();
@@ -386,6 +390,7 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        shiftHeld = event.hasShiftDown();
         if (activeDragWidget != null) {
             updateDraggedWidgetPosition(event.x(), event.y());
             return true;
@@ -413,9 +418,26 @@ public class HudEditorScreen extends Screen {
     }
 
     @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (event.hasShiftDown() || event.key() == InputConstants.KEY_LSHIFT || event.key() == InputConstants.KEY_RSHIFT) {
+            shiftHeld = true;
+        }
+        return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean keyReleased(KeyEvent event) {
+        if (!event.hasShiftDown() || event.key() == InputConstants.KEY_LSHIFT || event.key() == InputConstants.KEY_RSHIFT) {
+            shiftHeld = false;
+        }
+        return super.keyReleased(event);
+    }
+
+    @Override
     public void onClose() {
         activeDragWidget = null;
         activeGuides.clear();
+        shiftHeld = false;
         addon.saveConfig();
         de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), parentScreen);
     }

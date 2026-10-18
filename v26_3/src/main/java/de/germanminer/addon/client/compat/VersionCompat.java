@@ -85,10 +85,19 @@ public final class VersionCompat {
      */
     public static boolean isKeyDown(int keyCode) {
         try {
-            // Try 26.3: InputConstants.isKeyDown(int)
+            // Try 26.3: InputConstants.isKeyDown(int) using SDL scancodes
             try {
                 Method m = InputConstants.class.getMethod("isKeyDown", int.class);
-                return (boolean) m.invoke(null, keyCode);
+                int scancode = switch (keyCode) {
+                    case 340 -> 225; // GLFW KEY_LSHIFT -> SDL_SCANCODE_LSHIFT
+                    case 344 -> 229; // GLFW KEY_RSHIFT -> SDL_SCANCODE_RSHIFT
+                    case 341 -> 224; // GLFW KEY_LCONTROL -> SDL_SCANCODE_LCTRL
+                    case 345 -> 228; // GLFW KEY_RCONTROL -> SDL_SCANCODE_RCTRL
+                    case 342 -> 226; // GLFW KEY_LALT -> SDL_SCANCODE_LALT
+                    case 346 -> 230; // GLFW KEY_RALT -> SDL_SCANCODE_RALT
+                    default -> keyCode;
+                };
+                return (boolean) m.invoke(null, scancode);
             } catch (NoSuchMethodException ignored) {}
 
             // Try 26.1.2: InputConstants.isKeyDown(Window/long, int)

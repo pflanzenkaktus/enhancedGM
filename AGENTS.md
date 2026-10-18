@@ -76,7 +76,7 @@ Full step-by-step instructions and code templates are in **[docs/PLUGIN_AND_MODU
 4. **Register Module**: Add `registerModule(new MyFeatureModule(addon));` inside [`ModuleManager.registerDefaultModules()`](file:///e:/GM-Addon/v26_3/src/main/java/de/germanminer/addon/client/module/ModuleManager.java#L24-L31).
 5. **Build, Test & Copy JAR**:
    ```powershell
-   .\gradlew.bat test build; Copy-Item "e:\GM-Addon\v26_3\build\libs\gm-addon-1.0.0+26.3.jar" "C:\Users\PflanzenK\AppData\Roaming\ModrinthApp\profiles\Fabric 26.3\mods\gm-addon-1.0.0+26.3.jar" -Force
+   .\gradlew.bat test build; Remove-Item "C:\Users\PflanzenK\AppData\Roaming\ModrinthApp\profiles\Fabric 26.3\mods\gm-addon-*.jar" -Force -ErrorAction SilentlyContinue; Copy-Item "e:\GM-Addon\v26_3\build\libs\gm-addon-0.1.0-BETA+26.3.jar" "C:\Users\PflanzenK\AppData\Roaming\ModrinthApp\profiles\Fabric 26.3\mods\gm-addon-0.1.0-BETA+26.3.jar" -Force
    ```
 
 ---

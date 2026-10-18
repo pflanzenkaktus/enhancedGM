@@ -28,6 +28,14 @@ All notable changes to the **GermanMiner Addon** are documented in this file.
   - Fixed an issue where `"Login-Spawnschutz"` or long status labels collided and overlapped with the right-aligned countdown time (`14.2s`).
   - Increased base width from `152px` to `180px` (`SpawnProtectionModule`) and `165px` to `175px` (`DamageLogModule`).
   - Added dynamic width expansion with a guaranteed `16px` minimum padding between label and countdown timer so text never overlaps regardless of reason length or attacker name.
+- **HUD Editor Magnetic Snapping & Shift Bypass (`HudEditorScreen`)**:
+  - Fixed magnetic snapping not engaging due to an SDL scancode vs GLFW keycode mismatch in Minecraft 26.3 (`InputConstants.isKeyDown`), which caused `isShiftDown()` to intermittently return `true` and bypass snapping.
+  - Added proper `keyPressed` and `keyReleased` event handlers and synchronized `shiftHeld` state with `event.hasShiftDown()` across all mouse and keyboard interactions.
+  - Increased magnetic snap threshold from `7px` to `12px` for responsive, intuitive alignment across all screen resolutions and GUI scale settings.
+  - Fixed mouse button event codes (Left Click = button `0`, Right Click = button `1`) so right-clicking toggles widget visibility and left-clicking handles dragging and snapping.
+  - Excluded disabled HUD widgets from magnetic snap calculations so hidden elements no longer generate phantom snap guidelines.
+  - Clamped snap guideline coordinates to visible screen boundaries to prevent off-screen draw calls.
+  - Fixed profile mod deployment script to purge obsolete `1.0.0` JARs and cleanly install `0.1.0-BETA`.
 
 ---
 
