@@ -10,9 +10,9 @@ It provides a live **BlueMap Minimap & Fullscreen Map**, a **Cloud-Synced Speed 
 
 | Document | Audience | Contents |
 | :--- | :--- | :--- |
-| **[README.md](README.md)** | Humans & Developers | Project overview, features, keybindings, build commands, and file layout. |
-| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Humans & Developers | Deep-dive technical documentation on how every subsystem works internally (BlueMap tiles, Firebase sync, Blitzer auto-detection, Tacho/Tempomat sync, Damage-Log parser, HUD rendering). |
-| **[docs/PLUGIN_AND_MODULE_GUIDE.md](docs/PLUGIN_AND_MODULE_GUIDE.md)** | Humans & Developers | Step-by-step developer guide with copy-pasteable templates for creating new feature modules ("plugins"), HUD widgets, Settings controls, and keybindings. |
+| **[README.md](README.md)** | Users | Project overview, features, keybindings, build commands, and file layout. |
+| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Developers | Deep-dive technical documentation on how every subsystem works internally (BlueMap tiles, Firebase sync, Blitzer auto-detection, Tacho/Tempomat sync, Damage-Log parser, HUD rendering). |
+| **[docs/PLUGIN_AND_MODULE_GUIDE.md](docs/PLUGIN_AND_MODULE_GUIDE.md)** | Developers | Step-by-step developer guide with copy-pasteable templates for creating new feature modules ("plugins"), HUD widgets, Settings controls, and keybindings. |
 
 ---
 
