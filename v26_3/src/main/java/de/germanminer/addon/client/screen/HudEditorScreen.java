@@ -57,7 +57,7 @@ public class HudEditorScreen extends Screen {
         // 1. Open Full Modular Settings Screen
         addRenderableWidget(Button.builder(
             Component.literal("Modul-Einstellungen"),
-            btn -> Minecraft.getInstance().gui.setScreen(new GMSettingsScreen(addon, this))
+            btn -> de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), new GMSettingsScreen(addon, this))
         ).bounds(x, btnY, 132, 20).build());
         x += 136;
 
@@ -185,8 +185,7 @@ public class HudEditorScreen extends Screen {
     }
 
     private boolean isShiftDown() {
-        return InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
-            || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
+        return de.germanminer.addon.client.compat.VersionCompat.isShiftDown();
     }
 
     private void updateDraggedWidgetPosition(double mouseX, double mouseY) {
@@ -418,7 +417,7 @@ public class HudEditorScreen extends Screen {
         activeDragWidget = null;
         activeGuides.clear();
         addon.saveConfig();
-        Minecraft.getInstance().gui.setScreen(parentScreen);
+        de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), parentScreen);
     }
 
     @Override

@@ -106,11 +106,11 @@ public class FullscreenMapScreen extends Screen {
 
         // Right-aligned navigation buttons: Settings, HUD Editor, Close
         addRenderableWidget(Button.builder(Component.literal("Einstellungen"), btn -> {
-            Minecraft.getInstance().gui.setScreen(new GMSettingsScreen(addon, this));
+            de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), new GMSettingsScreen(addon, this));
         }).bounds(this.width - 216, by, 82, bh).build());
 
         addRenderableWidget(Button.builder(Component.literal("HUD-Editor"), btn -> {
-            Minecraft.getInstance().gui.setScreen(new HudEditorScreen(addon, this));
+            de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), new HudEditorScreen(addon, this));
         }).bounds(this.width - 130, by, 68, bh).build());
 
         addRenderableWidget(Button.builder(Component.literal("Fertig"), btn -> onClose())
@@ -349,7 +349,7 @@ public class FullscreenMapScreen extends Screen {
 
     @Override
     public void onClose() {
-        Minecraft.getInstance().gui.setScreen(parentScreen);
+        de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), parentScreen);
     }
 
     @Override

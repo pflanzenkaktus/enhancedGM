@@ -1,6 +1,7 @@
 package de.germanminer.addon.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import de.germanminer.addon.client.compat.VersionCompat;
 import de.germanminer.addon.client.map.BlueMapTextureCache;
 import de.germanminer.addon.client.module.ModuleManager;
 import de.germanminer.addon.client.render.HudOverlayRenderer;
@@ -217,16 +218,16 @@ public class GMAddonClient implements ClientModInitializer {
 
     private void onClientTick(Minecraft client) {
         while (openMapKey.consumeClick()) {
-            client.gui.setScreen(new FullscreenMapScreen(this, client.gui.screen()));
+            VersionCompat.setScreen(client, new FullscreenMapScreen(this, VersionCompat.getScreen(client)));
         }
         while (openHudEditorKey.consumeClick()) {
-            client.gui.setScreen(new HudEditorScreen(this, client.gui.screen()));
+            VersionCompat.setScreen(client, new HudEditorScreen(this, VersionCompat.getScreen(client)));
         }
         while (openSettingsKey.consumeClick()) {
-            client.gui.setScreen(new GMSettingsScreen(this, client.gui.screen()));
+            VersionCompat.setScreen(client, new GMSettingsScreen(this, VersionCompat.getScreen(client)));
         }
         while (openDamageLogKey.consumeClick()) {
-            client.gui.setScreen(new DamageLogScreen(this, client.gui.screen()));
+            VersionCompat.setScreen(client, new DamageLogScreen(this, VersionCompat.getScreen(client)));
         }
         while (zoomInKey.consumeClick()) {
             config.minimapZoomBlocks = Math.max(50.0, config.minimapZoomBlocks * 0.8);
@@ -254,7 +255,7 @@ public class GMAddonClient implements ClientModInitializer {
         if (!inVehicle) {
             pendingTempomatToggle = false;
             pendingTempomatDeltaSteps = 0;
-        } else if (client.gui.screen() == null) {
+        } else if (VersionCompat.getScreen(client) == null) {
             boolean toggleDown = tempomatToggleKey.isDown();
             if (toggleDown && !wasTempomatToggleDown) {
                 blitzerTracker.onTempomatToggleCommand();

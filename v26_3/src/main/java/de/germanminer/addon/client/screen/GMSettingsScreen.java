@@ -55,12 +55,12 @@ public class GMSettingsScreen extends Screen {
         // Top Bar: Quick navigation to HUD Layout Editor & Fullscreen Map
         addRenderableWidget(Button.builder(
             Component.literal("HUD-Positionen bearbeiten (Ziehen)"),
-            btn -> Minecraft.getInstance().gui.setScreen(new HudEditorScreen(addon, this))
+            btn -> de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), new HudEditorScreen(addon, this))
         ).bounds(this.width - 294, 8, 196, 20).build());
 
         addRenderableWidget(Button.builder(
             Component.literal("Fullscreen-Karte"),
-            btn -> Minecraft.getInstance().gui.setScreen(new FullscreenMapScreen(addon, this))
+            btn -> de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), new FullscreenMapScreen(addon, this))
         ).bounds(this.width - 94, 8, 86, 20).build());
 
         // Left Sidebar: Module Category buttons
@@ -265,7 +265,7 @@ public class GMSettingsScreen extends Screen {
     @Override
     public void onClose() {
         addon.saveConfig();
-        Minecraft.getInstance().gui.setScreen(parentScreen);
+        de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), parentScreen);
     }
 
     @Override

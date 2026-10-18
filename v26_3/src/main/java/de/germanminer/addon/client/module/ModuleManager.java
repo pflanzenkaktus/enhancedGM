@@ -101,7 +101,7 @@ public class ModuleManager {
     }
 
     public void renderAllHud(GuiGraphicsExtractor graphics, Minecraft mc, float partialTick, boolean editorPreview) {
-        if (!editorPreview && mc.gui.screen() == null) {
+        if (!editorPreview && de.germanminer.addon.client.compat.VersionCompat.getScreen(mc) == null) {
             for (ClientFeatureModule m : modules) {
                 if (m.isEnabled()) {
                     m.renderWorldOverlay(addon, graphics, mc, partialTick);

@@ -43,7 +43,7 @@ public class HudOverlayRenderer {
             return;
         }
         // Do not double-render while HudEditorScreen is open (HudEditorScreen renders interactive preview)
-        if (mc.gui.screen() instanceof HudEditorScreen) {
+        if (de.germanminer.addon.client.compat.VersionCompat.getScreen(mc) instanceof HudEditorScreen) {
             return;
         }
         if (!addon.isActiveOnCurrentServer()) {

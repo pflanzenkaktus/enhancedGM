@@ -399,7 +399,7 @@ public class DamageLogScreen extends Screen {
 
     @Override
     public void onClose() {
-        Minecraft.getInstance().gui.setScreen(parent);
+        de.germanminer.addon.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), parent);
     }
 
     @Override

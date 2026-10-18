@@ -231,7 +231,7 @@ public class TachoModule implements ClientFeatureModule {
             lastSteadyTargetTenKmh = -1;
         }
         // Always inspect open server container menus (e.g. /vehicles menu) to stay 100% in sync
-        if (client.gui.screen() instanceof AbstractContainerScreen<?> containerScreen) {
+        if (de.germanminer.addon.client.compat.VersionCompat.getScreen(client) instanceof AbstractContainerScreen<?> containerScreen) {
             inspectContainerScreenForTempomat(addon, containerScreen);
         }
     }
@@ -374,7 +374,8 @@ public class TachoModule implements ClientFeatureModule {
                 }
             }
             if (bossEventsField != null) {
-                BossHealthOverlay overlay = client.gui.hud.getBossOverlay();
+                BossHealthOverlay overlay = de.germanminer.addon.client.compat.VersionCompat.getBossOverlay(client);
+                if (overlay == null) return;
                 Object rawMap = bossEventsField.get(overlay);
                 if (rawMap instanceof Map<?, ?> map) {
                     for (Object val : map.values()) {

@@ -1,6 +1,7 @@
 package de.germanminer.addon.client.module;
 
 import de.germanminer.addon.client.GMAddonClient;
+import de.germanminer.addon.client.compat.VersionCompat;
 import de.germanminer.addon.client.screen.DamageLogScreen;
 import de.germanminer.addon.config.AddonConfig;
 import de.germanminer.addon.feature.DamageLogTracker;
@@ -265,7 +266,7 @@ public class DamageLogModule implements ClientFeatureModule {
                 "Öffnet die detaillierte Übersicht aller erlittenen und zugefügten Treffer inkl. 30s-Analyse.",
                 () -> {
                     Minecraft mc = Minecraft.getInstance();
-                    mc.gui.setScreen(new DamageLogScreen(addon, mc.gui.screen()));
+                    VersionCompat.setScreen(mc, new DamageLogScreen(addon, VersionCompat.getScreen(mc)));
                 }
             ),
             new Setting.ActionSetting(
