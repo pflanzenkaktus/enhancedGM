@@ -1,0 +1,50 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+def mcVersion = '26.1.2'
+def fabricApiVersion = '0.155.3+26.1.2'
+
+base {
+    archivesName = "${rootProject.archives_base_name}"
+}
+
+version = "${rootProject.mod_version}+${mcVersion}"
+
+repositories {
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content {
+            includeGroup 'maven.modrinth'
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${mcVersion}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
+
+    compileOnly "maven.modrinth:modmenu:21.0.0"
+
+    implementation project(path: ':common')
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['../v26_3/src/main/java']
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}

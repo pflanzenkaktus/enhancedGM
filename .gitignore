@@ -1,0 +1,78 @@
+# ==============================================================================
+# Gradle & Build Output
+# ==============================================================================
+.gradle/
+build/
+bin/
+out/
+common/build/
+v26_3/build/
+v26_3/.gradle/
+common/.gradle/
+
+# Exclude all compiled JAR files except the Gradle wrapper
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+*.war
+*.ear
+
+# ==============================================================================
+# IDEs & Editors
+# ==============================================================================
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.code-workspace
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ==============================================================================
+# Minecraft Runtime & Run Dirs
+# ==============================================================================
+run/
+mods/
+logs/
+*.log
+crash-reports/
+tile_cache/
+/config/
+run/config/
+
+# ==============================================================================
+# Operating System & Temp Files
+# ==============================================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.bak
+*.swp
+*~
+
+# ==============================================================================
+# Secrets & Credentials (NEVER COMMIT)
+# ==============================================================================
+*.env
+*.env.*
+*.keystore
+*.jks
+*.key
+*.pem
+*service-account*.json
+*credentials*.json
+local.properties
+
+# Firebase deployment configs & rules
+.firebaserc
+firebase.json
+database.rules.json
+
+# AI Agent Instructions
+AGENTS.md
+docs/AGENTS.md

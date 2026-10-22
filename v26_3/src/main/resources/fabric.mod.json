@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "gm-addon",
+  "version": "${version}",
+  "name": "enhancedGM",
+  "description": "Modulares Fabric-Addon für GermanMiner: Minimap, Blitzer-Warner, Tacho & Tempomat.",
+  "authors": [
+    "pflanzenkaktus"
+  ],
+  "license": "All-Rights-Reserved",
+  "icon": "assets/gm-addon/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "de.pflanzenkaktus.enhancedgm.client.GMAddonClient"
+    ],
+    "modmenu": [
+      "de.pflanzenkaktus.enhancedgm.client.compat.GMModMenuIntegration"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": ">=26.1.2 <=26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

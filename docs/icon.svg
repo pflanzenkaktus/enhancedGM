@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Dark ambient glow & soft elevation shadow -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#0284C7" flood-opacity="0.30" />
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+
+    <!-- Background card gradient: deep premium obsidian slate -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0A0F1D" />
+    </linearGradient>
+
+    <!-- Card border gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+
+    <!-- Arc & needle energy gradient: Electric Cyan to Vivid Azure -->
+    <linearGradient id="cyanGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284C7" />
+      <stop offset="50%" stop-color="#0EA5E9" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+
+    <!-- Accent red for speed limit / warning tick -->
+    <linearGradient id="crimsonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E" />
+      <stop offset="100%" stop-color="#BE123C" />
+    </linearGradient>
+  </defs>
+
+  <!-- 1. Squircle Base Card -->
+  <rect x="28" y="28" width="456" height="456" rx="108" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="3" filter="url(#softGlow)"/>
+
+  <!-- 2. Subtle Geometric GPS / Map Crosshairs Grid -->
+  <g stroke="#334155" stroke-width="1.5" opacity="0.35">
+    <circle cx="256" cy="246" r="172" fill="none" stroke-dasharray="4 8" />
+    <circle cx="256" cy="246" r="112" fill="none" stroke-dasharray="3 6" />
+    <line x1="256" y1="52" x2="256" y2="440" />
+    <line x1="62" y1="246" x2="450" y2="246" />
+  </g>
+
+  <!-- 3. Speedometer Outer Arc Gauge (250 degree sweep) -->
+  <!-- Inactive Track -->
+  <path d="M 126 338 A 150 150 0 1 1 386 338" fill="none" stroke="#1E293B" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- Active Glowing Speedometer Progress Arc (Electric Cyan) -->
+  <path d="M 126 338 A 150 150 0 1 1 362 170" fill="none" stroke="url(#cyanGrad)" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- Warning Red Zone Tick at high end of arc -->
+  <path d="M 374 200 A 150 150 0 0 1 386 338" fill="none" stroke="url(#crimsonGrad)" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- Gauge Accent Tick Marks -->
+  <g stroke="#64748B" stroke-width="3" stroke-linecap="round">
+    <line x1="150" y1="316" x2="162" y2="304" />
+    <line x1="126" y1="246" x2="142" y2="246" />
+    <line x1="150" y1="176" x2="162" y2="188" />
+    <line x1="256" y1="116" x2="256" y2="132" stroke="#38BDF8" stroke-width="4"/>
+    <line x1="350" y1="176" x2="362" y2="164" />
+    <line x1="370" y1="246" x2="386" y2="246" stroke="#F43F5E" stroke-width="4"/>
+  </g>
+
+  <!-- 4. Center Geometric Monogram: Merged Speedometer Pin & "eGM" Emblem -->
+  <!-- Inner circular radar housing -->
+  <circle cx="256" cy="246" r="68" fill="#0F172A" stroke="#334155" stroke-width="3"/>
+
+  <!-- Central Dynamic Speed Needle & GPS Direction Arrow pointing top-right (speed: 70 km/h) -->
+  <polygon points="256,234 354,148 268,246 250,258 244,246" fill="url(#cyanGrad)"/>
+  <circle cx="256" cy="246" r="18" fill="#38BDF8" />
+  <circle cx="256" cy="246" r="8" fill="#0A0F1D" />
+
+  <!-- 5. Sleek Tech Branding: "enhancedGM" Typography & Speed Dots -->
+  <text x="256" y="380" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="34" fill="#F8FAFC" text-anchor="middle" letter-spacing="1.5">
+    enhanced<tspan fill="#38BDF8">GM</tspan>
+  </text>
+  
+  <text x="256" y="408" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="13" fill="#94A3B8" text-anchor="middle" letter-spacing="4">
+    NAVIGATION &amp; HUD
+  </text>
+
+  <!-- Status LED Dots (Green = Tempomat, Cyan = GPS, Red = Blitzer Alert) -->
+  <circle cx="226" cy="434" r="4.5" fill="#10B981" />
+  <circle cx="256" cy="434" r="4.5" fill="#38BDF8" />
+  <circle cx="286" cy="434" r="4.5" fill="#F43F5E" />
+</svg>
