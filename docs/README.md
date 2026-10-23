@@ -117,7 +117,7 @@ gm-addon/
 ```bash
 ./gradlew test build
 ```
-The compiled mod JAR will be located at `v26_3/build/libs/enhancedGM-0.2.4.jar`.
+The compiled mod JAR will be located at `v26_3/build/libs/enhancedGM-0.2.5.jar`.
 
 ### 2. Install to Minecraft Fabric Profile
 Copy the generated JAR from `v26_3/build/libs/` into your Minecraft profile's `mods/` directory.
