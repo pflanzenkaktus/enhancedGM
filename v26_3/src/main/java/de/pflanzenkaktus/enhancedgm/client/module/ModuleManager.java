@@ -16,6 +16,7 @@ import java.util.Optional;
 public class ModuleManager {
     private final GMAddonClient addon;
     private final List<ClientFeatureModule> modules = new ArrayList<>();
+    private TachoModule tachoModule;
 
     public ModuleManager(GMAddonClient addon) {
         this.addon = addon;
@@ -24,9 +25,14 @@ public class ModuleManager {
     public void registerDefaultModules() {
         registerModule(new GeneralModule(addon));
         registerModule(new MinimapModule(addon));
-        registerModule(new TachoModule(addon));
+        this.tachoModule = new TachoModule(addon);
+        registerModule(this.tachoModule);
         registerModule(new BlitzerModule(addon));
         registerModule(new SpawnProtectionModule(addon));
+    }
+
+    public TachoModule getTachoModule() {
+        return tachoModule;
     }
 
     public void registerModule(ClientFeatureModule module) {

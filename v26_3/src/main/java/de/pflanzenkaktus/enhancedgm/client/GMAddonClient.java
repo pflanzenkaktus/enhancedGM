@@ -468,6 +468,13 @@ public class GMAddonClient implements ClientModInitializer {
                 return false;
             }
         }
+        // Require active GermanMiner vehicle bossbar
+        if (instance != null && instance.moduleManager != null) {
+            var tacho = instance.moduleManager.getTachoModule();
+            if (tacho != null && !tacho.isVehicleBossBarAvailable()) {
+                return false;
+            }
+        }
         return true;
     }
 

@@ -27,6 +27,13 @@ dependencies {
     compileOnly "maven.modrinth:modmenu:21.0.0"
 
     implementation project(path: ':common')
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 processResources {

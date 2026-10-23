@@ -54,6 +54,8 @@ public class TachoModule implements ClientFeatureModule {
     private int idleCruiseTicks = 0;
     private double speedAtIdleStart = 0.0;
     private boolean telemetryConfirmedCruise = false;
+    private volatile boolean vehicleBossBarAvailable = false;
+    private volatile long lastVehicleBossBarTimestampMs = 0L;
 
     public TachoModule(GMAddonClient addon) {
         this.addon = addon;
@@ -213,6 +215,25 @@ public class TachoModule implements ClientFeatureModule {
         return Optional.of(widgetDescriptor);
     }
 
+    public boolean isVehicleBossBarAvailable() {
+        return vehicleBossBarAvailable || (System.currentTimeMillis() - lastVehicleBossBarTimestampMs <= 1000L);
+    }
+
+    public static boolean isVehicleBossBarText(String text) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        String clean = COLOR_STRIP_PATTERN.matcher(text).replaceAll("").toLowerCase(java.util.Locale.ROOT).trim();
+        return clean.contains("km/h")
+            || clean.contains("gang:")
+            || clean.contains("höhe:")
+            || clean.contains("hoehe:")
+            || clean.contains("motor")
+            || clean.contains("tank")
+            || clean.contains("fahrzeug")
+            || clean.contains("geschwindigkeit");
+    }
+
     @Override
     public void onChatMessage(GMAddonClient addon, String plainMessage) {
         addon.getBlitzerTracker().onChatMessageForTempomat(plainMessage);
@@ -228,10 +249,10 @@ public class TachoModule implements ClientFeatureModule {
         if (client.player == null || client.gui == null) {
             return;
         }
+        inspectBossBarsForTempomat(addon, client);
         boolean inVehicle = GMAddonClient.isPlayerInActualVehicle(client.player);
         if (inVehicle) {
             inspectVehicleEntityForTempomatCapability(addon, client);
-            inspectBossBarsForTempomat(addon, client);
             inspectHotbarForTempomat(addon, client);
             checkSteadyCruiseAutoSync(addon, client);
             checkAutonomousCruiseTelemetry(addon, client);
@@ -522,6 +543,13 @@ public class TachoModule implements ClientFeatureModule {
 
     @SuppressWarnings("unchecked")
     private void inspectBossBarsForTempomat(GMAddonClient addon, Minecraft client) {
+        if (client.player == null || client.player.getVehicle() == null) {
+            this.vehicleBossBarAvailable = false;
+            this.lastVehicleBossBarTimestampMs = 0L;
+            return;
+        }
+
+        boolean foundVehicleBar = false;
         try {
             if (!bossFieldResolved) {
                 bossFieldResolved = true;
@@ -535,13 +563,20 @@ public class TachoModule implements ClientFeatureModule {
             }
             if (bossEventsField != null) {
                 BossHealthOverlay overlay = de.pflanzenkaktus.enhancedgm.client.compat.VersionCompat.getBossOverlay(client);
-                if (overlay == null) return;
+                if (overlay == null) {
+                    this.vehicleBossBarAvailable = false;
+                    return;
+                }
                 Object rawMap = bossEventsField.get(overlay);
                 if (rawMap instanceof Map<?, ?> map) {
                     for (Object val : map.values()) {
                         if (val instanceof BossEvent event && event.getName() != null) {
                             String text = event.getName().getString();
                             if (text != null && !text.isBlank()) {
+                                if (isVehicleBossBarText(text)) {
+                                    foundVehicleBar = true;
+                                    this.lastVehicleBossBarTimestampMs = System.currentTimeMillis();
+                                }
                                 float progress = event.getProgress();
                                 if (!text.equals(lastLoggedBossBar)) {
                                     lastLoggedBossBar = text;
@@ -566,6 +601,7 @@ public class TachoModule implements ClientFeatureModule {
             }
         } catch (Throwable ignored) {
         }
+        this.vehicleBossBarAvailable = foundVehicleBar;
     }
 
     @Override
