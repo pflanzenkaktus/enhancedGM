@@ -81,6 +81,8 @@
   "gm-addon.setting.tacho.style.desc": "Wähle zwischen ANALOG (Rundinstrument mit Nadel) und DIGITAL (Modernes Dashboard).",
   "gm-addon.setting.tacho.only_in_vehicle": "Nur im Fahrzeug anzeigen",
   "gm-addon.setting.tacho.only_in_vehicle.desc": "Blendet den Tacho automatisch aus, wenn du nicht in einem Fahrzeug sitzt.",
+  "gm-addon.setting.tacho.auto_motor_start": "Automatischer Motorstart",
+  "gm-addon.setting.tacho.auto_motor_start.desc": "Startet beim Einsteigen in ein Kraftfahrzeug automatisch die Zündung (/vehicles motor).",
   "gm-addon.setting.tacho.speed_calibration": "km/h Kalibrierungs-Faktor",
   "gm-addon.setting.tacho.speed_calibration.desc": "Kalibriert die Fahrzeug-Geschwindigkeit auf GermanMiner (Standard: 2.70 = exakte 50 km/h).",
   "gm-addon.setting.tacho.max_kmh": "Maximalwert Tacho-Skala",

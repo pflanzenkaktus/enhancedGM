@@ -124,4 +124,9 @@ In [`GMAddonClient.isActiveOnCurrentServer()`](../v26_3/src/main/java/de/pflanze
     2. **Item Lore / BossBar / Chat Inspection**: Scans open container slots, hotbar items, BossBars, and chat messages for Tempomat status and `km/h`.
     3. **Steady-Cruise Self-Healing Auto-Sync (`checkSteadyCruiseAutoSync`)**: When holding `W` with Tempomat active at a steady `10 km/h` multiple for `24` ticks (`1.2s`), automatically self-corrects `tempomatSpeedKmh` to match the server's speed cap.
 
+- **Automatic Engine Ignition (`autoMotorStart`)**:
+  - When entering a motorized vehicle on GermanMiner, the server initially displays a BossBar with `Motor ausgeschaltet`.
+  - When enabled (`config.autoMotorStart = true`), [`TachoModule`](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/module/TachoModule.java) arms a 4-tick (~200ms) timer to allow vehicle session initialization, then automatically dispatches the `/vehicles motor` command.
+  - State tracking (`hasAttemptedMotorStart`) ensures ignition is dispatched once upon entering and never re-ignites against the player's intent if stopped manually while parked. Dismounting resets the state for the next entry.
+
 ---

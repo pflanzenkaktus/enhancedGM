@@ -82,6 +82,7 @@ public class AddonConfig {
     public double speedCalibrationFactor = 2.70; // GermanMiner calibration: 50 km/h server = ~18.5 blocks/s (18.5 * 2.7 = 50 km/h)
     public boolean tachoEnabled = true;
     public boolean tachoOnlyInVehicle = true;
+    public boolean autoMotorStart = true;
     public String tachoStyle = "ANALOG"; // "ANALOG" or "DIGITAL"
     public int tachoX = 200;
     public int tachoY = 180;

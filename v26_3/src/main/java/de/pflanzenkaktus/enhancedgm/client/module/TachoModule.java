@@ -56,6 +56,8 @@ public class TachoModule implements ClientFeatureModule {
     private boolean telemetryConfirmedCruise = false;
     private volatile boolean vehicleBossBarAvailable = false;
     private volatile long lastVehicleBossBarTimestampMs = 0L;
+    private boolean hasAttemptedMotorStart = false;
+    private int pendingMotorStartTicks = -1;
 
     public TachoModule(GMAddonClient addon) {
         this.addon = addon;
@@ -234,6 +236,84 @@ public class TachoModule implements ClientFeatureModule {
             || clean.contains("geschwindigkeit");
     }
 
+    public static boolean isMotorOffText(String text) {
+        if (text == null || text.isBlank()) return false;
+        String clean = COLOR_STRIP_PATTERN.matcher(text).replaceAll("").toLowerCase(java.util.Locale.ROOT).trim();
+        return clean.contains("motor ausgeschaltet") || clean.contains("motor gestoppt");
+    }
+
+    public static boolean isMotorStartingOrRunningText(String text) {
+        if (text == null || text.isBlank()) return false;
+        String clean = COLOR_STRIP_PATTERN.matcher(text).replaceAll("").toLowerCase(java.util.Locale.ROOT).trim();
+        return clean.contains("motor startet") || clean.contains("km/h");
+    }
+
+    public boolean hasAttemptedMotorStart() {
+        return hasAttemptedMotorStart;
+    }
+
+    public void setAttemptedMotorStart(boolean attempted) {
+        this.hasAttemptedMotorStart = attempted;
+    }
+
+    public int getPendingMotorStartTicks() {
+        return pendingMotorStartTicks;
+    }
+
+    public void setPendingMotorStartTicks(int ticks) {
+        this.pendingMotorStartTicks = ticks;
+    }
+
+    public static boolean isNonMotorVehicleEntity(Minecraft client) {
+        if (client == null || client.player == null) return false;
+        try {
+            var vehicle = client.player.getVehicle();
+            var root = client.player.getRootVehicle();
+            Entity target = root != null ? root : vehicle;
+            if (target == null) return false;
+
+            String typeId = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString().toLowerCase(Locale.ROOT);
+            if (typeId.contains("horse") || typeId.contains("donkey") || typeId.contains("mule")
+                || typeId.contains("pig") || typeId.contains("strider") || typeId.contains("camel")) {
+                return true;
+            }
+
+            if (isUnsupportedVehicleName(target.getName().getString())
+                || (target.getCustomName() != null && isUnsupportedVehicleName(target.getCustomName().getString()))) {
+                return true;
+            }
+
+            if (target instanceof LivingEntity living) {
+                for (EquipmentSlot slot : EquipmentSlot.values()) {
+                    ItemStack item = living.getItemBySlot(slot);
+                    if (item != null && !item.isEmpty() && isUnsupportedVehicleName(extractItemText(item))) {
+                        return true;
+                    }
+                }
+            }
+
+            if (root != null) {
+                for (Entity passenger : root.getPassengers()) {
+                    if (passenger != null && passenger != client.player) {
+                        if (passenger.getCustomName() != null && isUnsupportedVehicleName(passenger.getCustomName().getString())) {
+                            return true;
+                        }
+                        if (passenger instanceof LivingEntity livingPass) {
+                            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                                ItemStack item = livingPass.getItemBySlot(slot);
+                                if (item != null && !item.isEmpty() && isUnsupportedVehicleName(extractItemText(item))) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
     @Override
     public void onChatMessage(GMAddonClient addon, String plainMessage) {
         addon.getBlitzerTracker().onChatMessageForTempomat(plainMessage);
@@ -250,6 +330,30 @@ public class TachoModule implements ClientFeatureModule {
             return;
         }
         inspectBossBarsForTempomat(addon, client);
+
+        // Tick automatic engine start countdown while seated in a vehicle
+        if (client.player.getVehicle() != null) {
+            if (isNonMotorVehicleEntity(client)) {
+                hasAttemptedMotorStart = true;
+                pendingMotorStartTicks = -1;
+            } else if (pendingMotorStartTicks > 0) {
+                pendingMotorStartTicks--;
+                if (pendingMotorStartTicks == 0) {
+                    pendingMotorStartTicks = -1;
+                    if (addon.getConfig().autoMotorStart && !hasAttemptedMotorStart) {
+                        hasAttemptedMotorStart = true;
+                        if (client.player.connection != null) {
+                            client.player.connection.sendCommand("vehicles motor");
+                            LOGGER.info("Dispatched automatic engine start command (/vehicles motor)");
+                        }
+                    }
+                }
+            }
+        } else {
+            hasAttemptedMotorStart = false;
+            pendingMotorStartTicks = -1;
+        }
+
         boolean inVehicle = GMAddonClient.isPlayerInActualVehicle(client.player);
         if (inVehicle) {
             inspectVehicleEntityForTempomatCapability(addon, client);
@@ -281,10 +385,8 @@ public class TachoModule implements ClientFeatureModule {
             Entity target = root != null ? root : vehicle;
             if (target == null) return;
 
-            // Check non-motor entity type (living mounts)
-            String typeId = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString().toLowerCase(Locale.ROOT);
-            if (typeId.contains("horse") || typeId.contains("donkey") || typeId.contains("mule")
-                || typeId.contains("pig") || typeId.contains("strider") || typeId.contains("camel")) {
+            // Check non-motor vehicles (bicycles, skateboards, wheelchairs, horses)
+            if (isNonMotorVehicleEntity(client)) {
                 tracker.setTempomatAvailable(false);
                 return;
             }
@@ -480,7 +582,7 @@ public class TachoModule implements ClientFeatureModule {
         }
     }
 
-    private String extractItemText(ItemStack stack) {
+    private static String extractItemText(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return "";
         StringBuilder fullText = new StringBuilder(stack.getHoverName().getString());
         ItemLore lore = stack.get(DataComponents.LORE);
@@ -577,6 +679,14 @@ public class TachoModule implements ClientFeatureModule {
                                     foundVehicleBar = true;
                                     this.lastVehicleBossBarTimestampMs = System.currentTimeMillis();
                                 }
+                                if (isMotorOffText(text)) {
+                                    if (addon.getConfig().autoMotorStart && !hasAttemptedMotorStart && pendingMotorStartTicks < 0 && !isNonMotorVehicleEntity(client)) {
+                                        pendingMotorStartTicks = 4;
+                                    }
+                                } else if (isMotorStartingOrRunningText(text)) {
+                                    pendingMotorStartTicks = -1;
+                                    hasAttemptedMotorStart = true;
+                                }
                                 float progress = event.getProgress();
                                 if (!text.equals(lastLoggedBossBar)) {
                                     lastLoggedBossBar = text;
@@ -641,6 +751,16 @@ public class TachoModule implements ClientFeatureModule {
                 () -> cfg.tachoOnlyInVehicle,
                 val -> {
                     cfg.tachoOnlyInVehicle = val;
+                    addon.saveConfig();
+                }
+            ),
+            new Setting.BooleanSetting(
+                "auto_motor_start",
+                I18n.get("gm-addon.setting.tacho.auto_motor_start"),
+                I18n.get("gm-addon.setting.tacho.auto_motor_start.desc"),
+                () -> cfg.autoMotorStart,
+                val -> {
+                    cfg.autoMotorStart = val;
                     addon.saveConfig();
                 }
             ),

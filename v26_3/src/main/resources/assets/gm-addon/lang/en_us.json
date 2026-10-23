@@ -81,6 +81,8 @@
   "gm-addon.setting.tacho.style.desc": "Choose between ANALOG (circular dial with needle) and DIGITAL (modern dashboard).",
   "gm-addon.setting.tacho.only_in_vehicle": "Only Show in Vehicle",
   "gm-addon.setting.tacho.only_in_vehicle.desc": "Automatically hides the speedometer when walking on foot.",
+  "gm-addon.setting.tacho.auto_motor_start": "Automatic Engine Start",
+  "gm-addon.setting.tacho.auto_motor_start.desc": "Automatically starts the engine (/vehicles motor) when entering a motorized vehicle.",
   "gm-addon.setting.tacho.speed_calibration": "km/h Calibration Factor",
   "gm-addon.setting.tacho.speed_calibration.desc": "Calibrates vehicle speed for GermanMiner (default: 2.70 = exact 50 km/h).",
   "gm-addon.setting.tacho.max_kmh": "Max Gauge Scale",

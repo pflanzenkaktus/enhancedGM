@@ -25,4 +25,27 @@ class TachoBossBarTest {
         assertFalse(TachoModule.isVehicleBossBarText(null));
         assertFalse(TachoModule.isVehicleBossBarText("   "));
     }
+
+    @Test
+    void testMotorOffTextDetection() {
+        assertTrue(TachoModule.isMotorOffText("§cMotor ausgeschaltet"));
+        assertTrue(TachoModule.isMotorOffText("Motor ausgeschaltet"));
+        assertTrue(TachoModule.isMotorOffText("§4[Motor gestoppt]"));
+
+        assertFalse(TachoModule.isMotorOffText("§eMotor startet..."));
+        assertFalse(TachoModule.isMotorOffText("54 km/h | Gang: D"));
+        assertFalse(TachoModule.isMotorOffText(null));
+        assertFalse(TachoModule.isMotorOffText(""));
+    }
+
+    @Test
+    void testMotorStartingOrRunningTextDetection() {
+        assertTrue(TachoModule.isMotorStartingOrRunningText("§eMotor startet..."));
+        assertTrue(TachoModule.isMotorStartingOrRunningText("54 km/h | Gang: D"));
+        assertTrue(TachoModule.isMotorStartingOrRunningText("0 km/h"));
+
+        assertFalse(TachoModule.isMotorStartingOrRunningText("§cMotor ausgeschaltet"));
+        assertFalse(TachoModule.isMotorStartingOrRunningText(null));
+        assertFalse(TachoModule.isMotorStartingOrRunningText(""));
+    }
 }
