@@ -9,7 +9,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'enhancedGM"
+rootProject.name = 'enhancedGM'
 include('common')
 include('v26_1')
 include('v26_3')
