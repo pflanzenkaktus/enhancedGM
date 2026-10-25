@@ -58,6 +58,19 @@ public class GeneralModule implements ClientFeatureModule {
                     addon.saveConfig();
                 }
             ),
+            new Setting.BooleanSetting(
+                "check_updates",
+                I18n.get("gm-addon.setting.check_updates"),
+                I18n.get("gm-addon.setting.check_updates.desc"),
+                () -> cfg.checkUpdates,
+                val -> {
+                    cfg.checkUpdates = val;
+                    addon.saveConfig();
+                    if (val) {
+                        addon.getUpdateChecker().checkForUpdatesAsync(false);
+                    }
+                }
+            ),
             new Setting.ActionSetting(
                 "reset_all_hud",
                 I18n.get("gm-addon.setting.reset_all_hud"),

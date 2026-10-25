@@ -173,6 +173,19 @@ public class DebugModule implements ClientFeatureModule {
                     addon.getTextureCache().clearGpuCache();
                     addon.getMarkerClient().refreshAsync();
                 }
+            ),
+            new Setting.ActionSetting(
+                "check_updates_now",
+                I18n.get("gm-addon.setting.check_updates_now"),
+                I18n.get("gm-addon.setting.check_updates_now.btn"),
+                I18n.get("gm-addon.setting.check_updates_now.desc"),
+                () -> {
+                    Minecraft mc = Minecraft.getInstance();
+                    if (mc.player != null) {
+                        mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§7[enhancedGM] Prüfe auf GitHub nach Updates..."));
+                    }
+                    addon.getUpdateChecker().checkForUpdatesAsync(true);
+                }
             )
         );
     }

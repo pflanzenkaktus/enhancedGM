@@ -9,12 +9,14 @@ import de.pflanzenkaktus.enhancedgm.client.screen.CommunitySyncPromptScreen;
 import de.pflanzenkaktus.enhancedgm.client.screen.FullscreenMapScreen;
 import de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen;
 import de.pflanzenkaktus.enhancedgm.client.screen.HudEditorScreen;
+import de.pflanzenkaktus.enhancedgm.client.screen.UpdateConsentPromptScreen;
 import de.pflanzenkaktus.enhancedgm.client.util.I18n;
 import de.pflanzenkaktus.enhancedgm.config.AddonConfig;
 import de.pflanzenkaktus.enhancedgm.data.PlotRepository;
 import de.pflanzenkaktus.enhancedgm.data.SpeedCameraRepository;
 import de.pflanzenkaktus.enhancedgm.feature.BlitzerWarningTracker;
 import de.pflanzenkaktus.enhancedgm.feature.SpawnProtectionTracker;
+import de.pflanzenkaktus.enhancedgm.feature.UpdateChecker;
 import de.pflanzenkaktus.enhancedgm.map.BlueMapMarkerClient;
 import de.pflanzenkaktus.enhancedgm.map.BlueMapTileClient;
 import net.fabricmc.api.ClientModInitializer;
@@ -24,15 +26,18 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.resources.Identifier;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Locale;
 
@@ -55,6 +60,8 @@ public class GMAddonClient implements ClientModInitializer {
     private PlotRepository plotRepository;
     private HudOverlayRenderer hudRenderer;
     private ModuleManager moduleManager;
+    private UpdateChecker updateChecker;
+    private boolean updateNotifiedThisSession = false;
 
     private KeyMapping openMapKey;
     private KeyMapping openHudEditorKey;
@@ -109,6 +116,39 @@ public class GMAddonClient implements ClientModInitializer {
         this.hudRenderer = new HudOverlayRenderer(this);
         this.moduleManager = new ModuleManager(this);
         this.moduleManager.registerDefaultModules();
+
+        this.updateChecker = new UpdateChecker(config, "0.3.0");
+        this.updateChecker.setOnUpdateFoundListener(release -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null) {
+                mc.execute(() -> notifyUpdateIfAvailable(mc, true));
+            }
+        });
+        this.updateChecker.setOnUpToDateListener(() -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null) {
+                mc.execute(() -> {
+                    if (mc.player != null) {
+                        mc.player.sendSystemMessage(Component.translatable("gm-addon.chat.update_uptodate", "v0.3.0")
+                            .withStyle(ChatFormatting.GREEN));
+                    }
+                });
+            }
+        });
+        this.updateChecker.setOnErrorListener(err -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null) {
+                mc.execute(() -> {
+                    if (mc.player != null) {
+                        mc.player.sendSystemMessage(Component.translatable("gm-addon.chat.update_error", err != null ? err : "Unknown")
+                            .withStyle(ChatFormatting.RED));
+                    }
+                });
+            }
+        });
+        if (config.checkUpdates) {
+            this.updateChecker.checkForUpdatesAsync(false);
+        }
 
         registerKeyMappings();
         registerEvents();
@@ -202,6 +242,7 @@ public class GMAddonClient implements ClientModInitializer {
 
             if (isActiveOnCurrentServer()) {
                 moduleManager.onServerJoin();
+                notifyUpdateIfAvailable(client, false);
             }
         });
 
@@ -266,6 +307,12 @@ public class GMAddonClient implements ClientModInitializer {
             if ((current instanceof TitleScreen && !(current instanceof CommunitySyncPromptScreen)) ||
                 (client.player != null && current == null && isActiveOnCurrentServer())) {
                 VersionCompat.setScreen(client, new CommunitySyncPromptScreen(this, current));
+            }
+        } else if (!config.updateConsentPromptDismissed) {
+            Screen current = VersionCompat.getScreen(client);
+            if ((current instanceof TitleScreen && !(current instanceof UpdateConsentPromptScreen)) ||
+                (client.player != null && current == null && isActiveOnCurrentServer())) {
+                VersionCompat.setScreen(client, new UpdateConsentPromptScreen(this, current));
             }
         }
 
@@ -502,5 +549,59 @@ public class GMAddonClient implements ClientModInitializer {
 
     public boolean hasPendingTempomatCommands() {
         return pendingTempomatToggle || pendingTempomatDeltaSteps != 0;
+    }
+
+    public void notifyUpdateIfAvailable(Minecraft client) {
+        notifyUpdateIfAvailable(client, false);
+    }
+
+    public void notifyUpdateIfAvailable(Minecraft client, boolean force) {
+        if (!force && (!config.checkUpdates || updateNotifiedThisSession)) {
+            return;
+        }
+        if (client == null || client.player == null) {
+            return;
+        }
+        UpdateChecker.ReleaseInfo release = updateChecker != null ? updateChecker.getLatestRelease() : null;
+        if (release == null) {
+            return;
+        }
+        updateNotifiedThisSession = true;
+
+        Component prefix = Component.literal("[GM-Addon] ").withStyle(ChatFormatting.DARK_GREEN, ChatFormatting.BOLD);
+        Component msg = Component.translatable("gm-addon.chat.update_available", release.version())
+            .withStyle(ChatFormatting.GOLD);
+
+        Component downloadBtn = Component.literal(" [")
+            .withStyle(ChatFormatting.DARK_GRAY)
+            .append(Component.translatable("gm-addon.chat.update_download")
+                .withStyle(style -> style
+                    .withColor(ChatFormatting.AQUA)
+                    .withUnderlined(true)
+                    .withClickEvent(new ClickEvent.OpenUrl(URI.create(release.url())))
+                    .withHoverEvent(new HoverEvent.ShowText(Component.translatable("gm-addon.chat.update_download_tooltip")))))
+            .append(Component.literal("]").withStyle(ChatFormatting.DARK_GRAY));
+
+        Component changelogBtn = Component.literal(" [")
+            .withStyle(ChatFormatting.DARK_GRAY)
+            .append(Component.translatable("gm-addon.chat.update_changelog")
+                .withStyle(style -> style
+                    .withColor(ChatFormatting.YELLOW)
+                    .withUnderlined(true)
+                    .withClickEvent(new ClickEvent.OpenUrl(URI.create(release.url())))
+                    .withHoverEvent(new HoverEvent.ShowText(Component.translatable("gm-addon.chat.update_changelog_tooltip")))))
+            .append(Component.literal("]").withStyle(ChatFormatting.DARK_GRAY));
+
+        Component fullMessage = Component.empty()
+            .append(prefix)
+            .append(msg)
+            .append(downloadBtn)
+            .append(changelogBtn);
+
+        client.player.sendSystemMessage(fullMessage);
+    }
+
+    public UpdateChecker getUpdateChecker() {
+        return updateChecker;
     }
 }

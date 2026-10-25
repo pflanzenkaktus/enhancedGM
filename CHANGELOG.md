@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-10-25
 
 ### Added
+- **Automatic Update Checker & Privacy-Compliant Opt-In Dialog**:
+  - Asynchronous background check against GitHub Releases API on game startup and server join.
+  - Interactive chat notification when a newer release is published, complete with direct clickable `[Download]` and `[Changelog]` links with hover tooltips.
+  - GDPR/privacy-friendly setup dialog displayed on first launch: explicitly requests consent before establishing any network connections, transmitting zero personal data or telemetry.
+  - Configurable toggle in the *General* settings tab and manual "Check for Updates Now" action in the *Debug & Advanced* menu.
 - **Automatic Engine Start (Auto Motor Start)**:
   - Automatically executes `/vehicles motor` upon mounting motorized vehicles whenever the BossBar indicates the engine is switched off.
   - Smart vehicle filter prevents accidental triggers on non-motorized entities (bicycles, skateboards, wheelchairs, horses, camels, etc.).

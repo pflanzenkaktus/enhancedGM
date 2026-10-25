@@ -17,6 +17,12 @@ import java.util.List;
 public class AddonConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
+    // Auto-update checker & privacy consent
+    public boolean checkUpdates = true;
+    public boolean updateConsentPromptDismissed = false;
+    public String latestReleaseUrl = "https://github.com/pflanzenkaktus/enhancedGM/releases/latest";
+    public long lastUpdateCheckEpochMs = 0L;
+
     // Server activation & language
     public boolean forceEnableEverywhere = false; // Default false for release safety; also auto-detects germanminer.de
     public String serverDomainPattern = "germanminer.de";

@@ -283,4 +283,31 @@ public final class VersionCompat {
         } catch (Throwable ignored) {}
         return null;
     }
+
+    public static void openUrl(Minecraft mc, String url, Screen parent) {
+        if (mc == null) return;
+        try {
+            net.minecraft.client.gui.screens.ConfirmLinkScreen.confirmLinkNow(parent, java.net.URI.create(url), true);
+        } catch (Throwable t) {
+            try {
+                java.awt.Desktop.getDesktop().browse(java.net.URI.create(url));
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    public static net.minecraft.network.chat.Component createUrlLink(String text, String url) {
+        try {
+            return net.minecraft.network.chat.Component.literal(text)
+                .withStyle(style -> style
+                    .withUnderlined(true)
+                    .withColor(0x38BDF8)
+                    .withClickEvent(new net.minecraft.network.chat.ClickEvent.OpenUrl(java.net.URI.create(url)))
+                    .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(
+                        net.minecraft.network.chat.Component.literal(url)
+                    ))
+                );
+        } catch (Throwable t) {
+            return net.minecraft.network.chat.Component.literal(text + " (" + url + ")");
+        }
+    }
 }
