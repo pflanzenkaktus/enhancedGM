@@ -14,8 +14,8 @@ This document contains mandatory guidelines and workflow requirements for develo
 - Never reset or regress version numbers.
 
 ## 3. File Editing & Tooling
-- **Direct File Editing**: Always edit source code files directly using standard file modification tools (`edit_file` / `write_file`).
-- **No Python Patch Scripts**: Do NOT write temporary Python scripts or one-liners to regex-replace or modify repository source files.
+- **Direct File Editing**: Prefer editing source code files directly using standard file modification tools (`edit_file` / `write_file`).
+- **Python Scripts**: Use only if strictly necessary (e.g. for complex multi-file migrations or low-level binary fixes where standard file tools are insufficient).
 - **Line Endings**: Ensure standard `LF` line endings across all Java and resource files (configured via `.gitattributes`).
 
 ## 4. Git & GitHub Remote Discipline
