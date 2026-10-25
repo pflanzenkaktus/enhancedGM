@@ -64,21 +64,16 @@ public class HudOverlayRenderer {
 
         int x = cfg.minimapX;
         int y = cfg.minimapY;
-        float scale = cfg.minimapScale;
-        int baseSize = cfg.minimapSize;
-        int footerHeight = 22;
-        int totalHeight = baseSize + footerHeight;
+        int mapSize = Math.round(cfg.minimapSize * cfg.minimapScale);
+        int totalHeight = Math.round((cfg.minimapSize + 22) * cfg.minimapScale);
+        int footerHeight = totalHeight - mapSize;
 
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(x, y);
-        graphics.pose().scale(scale, scale);
-
-        // Outer card background & border
-        graphics.fill(0, 0, baseSize, totalHeight, 0xCC0F172A);
-        graphics.outline(0, 0, baseSize, totalHeight, 0xFF334155);
+        // Outer card background & border (exact bounds matching hitbox)
+        graphics.fill(x, y, x + mapSize, y + totalHeight, 0xCC0F172A);
+        graphics.outline(x, y, mapSize, totalHeight, 0xFF334155);
 
         // Map viewport background
-        graphics.fill(0, 0, baseSize, baseSize, 0xFF0B1120);
+        graphics.fill(x, y, x + mapSize, y + mapSize, 0xFF0B1120);
 
         LocalPlayer player = mc.player;
         double px = player != null ? player.getX() : -885.0;
@@ -86,16 +81,12 @@ public class HudOverlayRenderer {
         float playerYaw = player != null ? player.getViewYRot(partialTick) : 0.0f;
 
         double visibleBlocks = Math.max(40.0, cfg.minimapZoomBlocks);
-        double pixelsPerBlock = (double) baseSize / visibleBlocks;
-        int centerX = baseSize / 2;
-        int centerY = baseSize / 2;
+        double pixelsPerBlock = (double) mapSize / visibleBlocks;
+        int centerX = x + mapSize / 2;
+        int centerY = y + mapSize / 2;
 
-        // Clip map tiles and markers inside the minimap square (scissor uses absolute window coords)
-        int scissorX1 = Math.round(x + 1 * scale);
-        int scissorY1 = Math.round(y + 1 * scale);
-        int scissorX2 = Math.round(x + (baseSize - 1) * scale);
-        int scissorY2 = Math.round(y + (baseSize - 1) * scale);
-        graphics.enableScissor(scissorX1, scissorY1, scissorX2, scissorY2);
+        // Clip map tiles and markers inside the minimap square
+        graphics.enableScissor(x, y, x + mapSize, y + mapSize);
 
         graphics.pose().pushMatrix();
         graphics.pose().translate(centerX, centerY);
@@ -183,19 +174,19 @@ public class HudOverlayRenderer {
         double northAngleRad = cfg.minimapRotateWithPlayer
             ? Math.toRadians(180.0 - playerYaw - 90.0)
             : Math.toRadians(-90.0);
-        int compassRadius = Math.max(12, (baseSize / 2) - 8);
+        int compassRadius = Math.max(10, (mapSize / 2) - 8);
         int nx = centerX + (int) Math.round(Math.cos(northAngleRad) * compassRadius);
         int ny = centerY + (int) Math.round(Math.sin(northAngleRad) * compassRadius);
-        nx = Math.clamp(nx, 7, baseSize - 7);
-        ny = Math.clamp(ny, 7, baseSize - 7);
+        nx = Math.clamp(nx, x + 6, x + mapSize - 6);
+        ny = Math.clamp(ny, y + 6, y + mapSize - 6);
         graphics.fill(nx - 5, ny - 5, nx + 6, ny + 6, 0xCC0F172A);
         graphics.centeredText(font, "N", nx + 1, ny - 3, 0xFFF87171);
 
         // Footer bar: Coordinates & Speed km/h
-        int footerY = baseSize;
-        graphics.fill(0, footerY, baseSize, totalHeight, 0xFF1E293B);
+        int footerY = y + mapSize;
+        graphics.fill(x, footerY, x + mapSize, y + totalHeight, 0xFF1E293B);
 
-        int maxFooterW = baseSize - 8;
+        int maxFooterW = mapSize - 8;
         String coordText = String.format(Locale.ROOT, "%d, %d", (int) Math.floor(px), (int) Math.floor(pz));
         int speedKmh = (int) Math.round(addon.getBlitzerTracker().getCurrentSpeedKmh());
         String speedText = speedKmh + " km/h";
@@ -208,8 +199,9 @@ public class HudOverlayRenderer {
             line1Scale = (float) maxFooterW / line1NeededW;
         }
 
+        float line1Y = footerHeight >= 18 ? (footerY + 2.0f) : (footerY + Math.max(1.0f, (footerHeight - 9.0f) / 2.0f));
         graphics.pose().pushMatrix();
-        graphics.pose().translate(4.0f, footerY + 2.0f);
+        graphics.pose().translate(x + 4.0f, line1Y);
         if (line1Scale < 1.0f) {
             graphics.pose().scale(line1Scale, line1Scale);
         }
@@ -220,33 +212,33 @@ public class HudOverlayRenderer {
         graphics.pose().popMatrix();
 
         // Footer Line 2: Responsive shortcut hints
-        String subLine = I18n.get("gm-addon.hud.minimap.subline");
-        if (font.width(subLine) > maxFooterW) {
-            subLine = I18n.get("gm-addon.hud.minimap.subline_short");
-        }
-        if (font.width(subLine) > maxFooterW) {
-            subLine = "[M] Karte";
-        }
-        if (font.width(subLine) > maxFooterW) {
-            subLine = "[M]";
-        }
-
-        int subW = font.width(subLine);
-        float line2Scale = 1.0f;
-        if (subW > maxFooterW && maxFooterW > 10) {
-            line2Scale = (float) maxFooterW / subW;
-        }
-        if (line2Scale >= 0.60f) {
-            graphics.pose().pushMatrix();
-            graphics.pose().translate(4.0f, footerY + 11.0f);
-            if (line2Scale < 1.0f) {
-                graphics.pose().scale(line2Scale, line2Scale);
+        if (footerHeight >= 18) {
+            String subLine = I18n.get("gm-addon.hud.minimap.subline");
+            if (font.width(subLine) > maxFooterW) {
+                subLine = I18n.get("gm-addon.hud.minimap.subline_short");
             }
-            graphics.text(font, subLine, 0, 0, 0xFF94A3B8, false);
-            graphics.pose().popMatrix();
-        }
+            if (font.width(subLine) > maxFooterW) {
+                subLine = "[M] Karte";
+            }
+            if (font.width(subLine) > maxFooterW) {
+                subLine = "[M]";
+            }
 
-        graphics.pose().popMatrix();
+            int subW = font.width(subLine);
+            float line2Scale = 1.0f;
+            if (subW > maxFooterW && maxFooterW > 10) {
+                line2Scale = (float) maxFooterW / subW;
+            }
+            if (line2Scale >= 0.60f) {
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(x + 4.0f, footerY + 11.0f);
+                if (line2Scale < 1.0f) {
+                    graphics.pose().scale(line2Scale, line2Scale);
+                }
+                graphics.text(font, subLine, 0, 0, 0xFF94A3B8, false);
+                graphics.pose().popMatrix();
+            }
+        }
     }
 
     /**
