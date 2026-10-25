@@ -17,6 +17,7 @@ public class ModuleManager {
     private final GMAddonClient addon;
     private final List<ClientFeatureModule> modules = new ArrayList<>();
     private TachoModule tachoModule;
+    private PlotModule plotModule;
 
     public ModuleManager(GMAddonClient addon) {
         this.addon = addon;
@@ -29,6 +30,13 @@ public class ModuleManager {
         registerModule(this.tachoModule);
         registerModule(new BlitzerModule(addon));
         registerModule(new SpawnProtectionModule(addon));
+        this.plotModule = new PlotModule(addon);
+        registerModule(this.plotModule);
+        registerModule(new DebugModule(addon));
+    }
+
+    public PlotModule getPlotModule() {
+        return plotModule;
     }
 
     public TachoModule getTachoModule() {

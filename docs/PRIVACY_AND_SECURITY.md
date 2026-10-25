@@ -85,6 +85,11 @@ The Firebase Realtime Database is configured with structured validation rules to
 
 ---
 
+## 7. Plot Reminder Data (local only)
+
+The plot expiry reminder stores your own plots and apartments (name, type, coordinates, city area, last verified visit time) in `config/gm-addon/plots.json`, separated by Minecraft account name. This data is read from the server menu you open yourself via the Settings scan, and from action bar messages. It is **never uploaded** to Firebase or any other service. Deleting `plots.json` purges it completely. The optional company name is stored locally in `config/gm-addon/config.json`.
+---
+
 ## 6. Disclaimer & Limitation of Liability
 
 enhancedGM is an experimental, private community hobby project provided strictly "AS IS", without warranty of any kind, express or implied. The authors do not guarantee uninterrupted availability, error-free operation, or absolute data security. To the maximum extent permitted by applicable law, the authors explicitly disclaim all liability for software defects, in-game penalties, data loss, or potential privacy, security, or data-handling flaws and misconfigurations. Use of this addon and all network synchronization is entirely voluntary and at the user's sole risk.

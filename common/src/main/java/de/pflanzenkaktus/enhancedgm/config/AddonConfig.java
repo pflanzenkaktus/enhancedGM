@@ -78,6 +78,19 @@ public class AddonConfig {
     public boolean triggerSpawnProtectionOnJoin = true;
     public boolean triggerSpawnProtectionOnRespawn = true;
 
+    // Plot expiry reminder (Grundstücke & Wohnungen, 60-day rule)
+    public boolean plotReminderEnabled = true;
+    public boolean plotWidgetEnabled = true;
+    public String plotCompanyName = ""; // Owner name shown as "<Name> (Firma)" on company plots
+    public int plotReminderDaysBefore = 7;
+    public int plotReminderIntervalMinutes = 30; // 0 = only on join, >0 = periodic reminder in minutes
+    public long plotLastScanEpochMs = 0L; // last completed scan (even if empty), 0 = never
+    public int plotRescanPromptDays = 30;
+    public int plotMatchRadiusBlocks = 150;
+    public int plotWidgetX = 12;
+    public int plotWidgetY = 212;
+    public float plotWidgetScale = 1.0f;
+
     // Speedometer (Tacho) & Tempomat HUD settings
     public double speedCalibrationFactor = 2.70; // GermanMiner calibration: 50 km/h server = ~18.5 blocks/s (18.5 * 2.7 = 50 km/h)
     public boolean tachoEnabled = true;
@@ -117,6 +130,21 @@ public class AddonConfig {
                     }
                     if (loaded.blitzerDedupeRadiusBlocks <= 1.0) {
                         loaded.blitzerDedupeRadiusBlocks = 28.0;
+                    }
+                    if (loaded.plotCompanyName == null) {
+                        loaded.plotCompanyName = "";
+                    }
+                    if (loaded.plotMatchRadiusBlocks <= 0) {
+                        loaded.plotMatchRadiusBlocks = 150;
+                    }
+                    if (loaded.plotReminderDaysBefore <= 0) {
+                        loaded.plotReminderDaysBefore = 7;
+                    }
+                    if (loaded.plotReminderIntervalMinutes < 0) {
+                        loaded.plotReminderIntervalMinutes = 30;
+                    }
+                    if (loaded.plotWidgetScale <= 0.1f) {
+                        loaded.plotWidgetScale = 1.0f;
                     }
                     // Validate and clamp critical configuration values
                     loaded.minimapZoomBlocks = Math.clamp(loaded.minimapZoomBlocks, 25.0, 1500.0);

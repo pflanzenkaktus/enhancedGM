@@ -233,27 +233,6 @@ public class MinimapModule implements ClientFeatureModule {
                 I18n.get("gm-addon.setting.minimap.marker_train.desc"),
                 () -> cfg.enabledMarkerSets.contains("S-Bahnhaltestellen"),
                 val -> toggleCategory(cfg, "S-Bahnhaltestellen", val)
-            ),
-            new Setting.IntSliderSetting(
-                "tile_cache_ttl",
-                I18n.get("gm-addon.setting.minimap.cache_ttl"),
-                I18n.get("gm-addon.setting.minimap.cache_ttl.desc"),
-                5, 240, " min",
-                () -> cfg.tileCacheTtlMinutes,
-                val -> {
-                    cfg.tileCacheTtlMinutes = val;
-                    addon.saveConfig();
-                }
-            ),
-            new Setting.ActionSetting(
-                "refresh_bluemap_now",
-                I18n.get("gm-addon.setting.minimap.refresh_now"),
-                I18n.get("gm-addon.setting.minimap.refresh_now.btn"),
-                I18n.get("gm-addon.setting.minimap.refresh_now.desc"),
-                () -> {
-                    addon.getTextureCache().clearGpuCache();
-                    addon.getMarkerClient().refreshAsync();
-                }
             )
         );
     }

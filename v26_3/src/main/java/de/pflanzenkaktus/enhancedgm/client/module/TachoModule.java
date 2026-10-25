@@ -764,17 +764,6 @@ public class TachoModule implements ClientFeatureModule {
                     addon.saveConfig();
                 }
             ),
-            new Setting.DoubleSliderSetting(
-                "speed_calibration",
-                I18n.get("gm-addon.setting.tacho.speed_calibration"),
-                I18n.get("gm-addon.setting.tacho.speed_calibration.desc"),
-                1.80, 3.60, 0.05, "x",
-                () -> cfg.speedCalibrationFactor,
-                val -> {
-                    cfg.speedCalibrationFactor = val;
-                    addon.saveConfig();
-                }
-            ),
             new Setting.IntSliderSetting(
                 "tacho_max_kmh",
                 I18n.get("gm-addon.setting.tacho.max_kmh"),

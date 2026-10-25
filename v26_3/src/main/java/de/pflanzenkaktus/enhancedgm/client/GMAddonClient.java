@@ -11,6 +11,7 @@ import de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen;
 import de.pflanzenkaktus.enhancedgm.client.screen.HudEditorScreen;
 import de.pflanzenkaktus.enhancedgm.client.util.I18n;
 import de.pflanzenkaktus.enhancedgm.config.AddonConfig;
+import de.pflanzenkaktus.enhancedgm.data.PlotRepository;
 import de.pflanzenkaktus.enhancedgm.data.SpeedCameraRepository;
 import de.pflanzenkaktus.enhancedgm.feature.BlitzerWarningTracker;
 import de.pflanzenkaktus.enhancedgm.feature.SpawnProtectionTracker;
@@ -51,6 +52,7 @@ public class GMAddonClient implements ClientModInitializer {
     private BlueMapTextureCache textureCache;
     private BlitzerWarningTracker blitzerTracker;
     private SpawnProtectionTracker spawnProtectionTracker;
+    private PlotRepository plotRepository;
     private HudOverlayRenderer hudRenderer;
     private ModuleManager moduleManager;
 
@@ -69,6 +71,8 @@ public class GMAddonClient implements ClientModInitializer {
     private boolean wasDeadOrDying = false;
     private int lastPlayerEntityId = -1;
     private String lastChatHoverText = "";
+    private Component lastActionBarComponent = null;
+    private int lastActionBarTime = 0;
 
     // Anti-spam queue & edge tracking for Tempomat hotkeys
     private boolean wasTempomatToggleDown = false;
@@ -91,6 +95,9 @@ public class GMAddonClient implements ClientModInitializer {
 
         this.cameraRepository = new SpeedCameraRepository(configDir.resolve("speed_cameras.json"), config);
         this.cameraRepository.initialize();
+
+        this.plotRepository = new PlotRepository(configDir.resolve("plots.json"));
+        this.plotRepository.load();
 
         this.tileClient = new BlueMapTileClient(configDir.resolve("tile_cache"), config);
         this.markerClient = new BlueMapMarkerClient(config);
@@ -293,6 +300,17 @@ public class GMAddonClient implements ClientModInitializer {
             return;
         }
 
+        // Action bar texts sent via ClientboundSetActionBarTextPacket bypass the GAME message event,
+        // so also poll the currently displayed action bar message.
+        int[] abTime = new int[1];
+        Component actionBar = VersionCompat.getActionBarMessage(client, abTime);
+        if (actionBar != null && abTime[0] > 0
+            && (actionBar != lastActionBarComponent || abTime[0] > lastActionBarTime)) {
+            moduleManager.onActionBarMessage(actionBar.getString());
+        }
+        lastActionBarComponent = actionBar;
+        lastActionBarTime = abTime[0];
+
         boolean inVehicle = isPlayerInActualVehicle(client.player);
         if (!inVehicle) {
             pendingTempomatToggle = false;
@@ -438,6 +456,10 @@ public class GMAddonClient implements ClientModInitializer {
 
     public BlitzerWarningTracker getBlitzerTracker() {
         return blitzerTracker;
+    }
+
+    public PlotRepository getPlotRepository() {
+        return plotRepository;
     }
 
     public SpawnProtectionTracker getSpawnProtectionTracker() {

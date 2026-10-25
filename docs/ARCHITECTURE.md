@@ -15,7 +15,7 @@ flowchart TD
         MM["ModuleManager"]
         HUD["HudOverlayRenderer"]
         TexCache["BlueMapTextureCache (GPU DynamicTexture)"]
-        Screens["GMSettingsScreen (O) / HudEditorScreen (H) / FullscreenMapScreen (M)"]
+        Screens["GMSettingsScreen (O) / HudEditorScreen (H) / FullscreenMapScreen (M) / PlotOverviewScreen / PlotScanPromptScreen"]
 
         subgraph Modules["Registered ClientFeatureModules"]
             M1["GeneralModule"]
@@ -23,20 +23,24 @@ flowchart TD
             M3["TachoModule"]
             M4["BlitzerModule"]
             M5["SpawnProtectionModule"]
+            M6["PlotModule"]
         end
     end
 
     subgraph common["Platform-Independent Core (:common)"]
         Cfg["AddonConfig (config.json)"]
         Repo["SpeedCameraRepository (speed_cameras.json + Firebase REST)"]
+        PlotRepo["PlotRepository (plots.json)"]
         Tile["BlueMapTileClient (Disk + RAM Cache)"]
         Marker["BlueMapMarkerClient (markers.json)"]
         Blitzer["BlitzerWarningTracker (Velocity + Alerts + Tempomat)"]
         Spawn["SpawnProtectionTracker (20s Timer)"]
+        PlotTrk["PlotTracker (Menu & Actionbar Parser)"]
     end
 
     Entry --> Cfg
     Entry --> Repo
+    Entry --> PlotRepo
     Entry --> Tile
     Entry --> Marker
     Entry --> Blitzer
@@ -109,6 +113,7 @@ In [`GMAddonClient.isActiveOnCurrentServer()`](../v26_3/src/main/java/de/pflanze
 
 ---
 
+
 ### 2.3 Calibrated Speed (`km/h`), Analog/Digital Tacho & Tempomat Sync
 - **Classes**: [`BlitzerWarningTracker`](../common/src/main/java/de/pflanzenkaktus/enhancedgm/feature/BlitzerWarningTracker.java), [`TachoModule`](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/module/TachoModule.java), [`HudOverlayRenderer.renderTachoWidget`](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/render/HudOverlayRenderer.java)
 - **Why `speedCalibrationFactor = 2.70` is Used**:
@@ -128,5 +133,81 @@ In [`GMAddonClient.isActiveOnCurrentServer()`](../v26_3/src/main/java/de/pflanze
   - When entering a motorized vehicle on GermanMiner, the server initially displays a BossBar with `Motor ausgeschaltet`.
   - When enabled (`config.autoMotorStart = true`), [`TachoModule`](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/module/TachoModule.java) arms a 4-tick (~200ms) timer to allow vehicle session initialization, then automatically dispatches the `/vehicles motor` command.
   - State tracking (`hasAttemptedMotorStart`) ensures ignition is dispatched once upon entering and never re-ignites against the player's intent if stopped manually while parked. Dismounting resets the state for the next entry.
+
+---
+
+### 2.4 Plot Expiry Reminder ("Grundstücke & Wohnungen", 60-Day Rule)
+- **Classes**:
+  - Platform-independent (:common): [OwnedPlot](../common/src/main/java/de/pflanzenkaktus/enhancedgm/model/OwnedPlot.java), [PlotTracker](../common/src/main/java/de/pflanzenkaktus/enhancedgm/feature/PlotTracker.java), [PlotRepository](../common/src/main/java/de/pflanzenkaktus/enhancedgm/data/PlotRepository.java)
+  - Client implementation (:v26_3): [PlotModule](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/module/PlotModule.java), [PlotOverviewScreen](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/screen/PlotOverviewScreen.java), [PlotScanPromptScreen](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/screen/PlotScanPromptScreen.java)
+
+- **The 60-Day Server Rule**:
+  GermanMiner automatically clears and resets rented/purchased plots (mie*, kau*) and apartments if they have not been stepped on for 60 consecutive days (OwnedPlot.EXPIRY_DAYS = 60). The addon calculates exact deadlines: deadlineEpochMs = lastVisitedEpochMs + (60 * 24 * 60 * 60 * 1000L).
+
+- **Automated Menu Scan & Multi-Page Pagination**:
+  - Triggered via Settings button (*Scan starten*) or initial prompt dialog (*Jetzt scannen*).
+  - Closes any open GUI, dispatches /menu, and waits for the container screen titled Spielmenü.
+  - Clicks the item titled Grundstücke & Wohnungen via cross-version click helper [VersionCompat.clickContainerSlot](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/compat/VersionCompat.java).
+  - Waits for Spielmenü (Regionen) and parses every region item's lore (Typ:, x: y: z:, Stadtgebiet:) using [PlotTracker.parseMenuItem](../common/src/main/java/de/pflanzenkaktus/enhancedgm/feature/PlotTracker.java).
+  - **Multi-Page Pagination**: Detects pagination navigation items (
+ächste, weiter, 
+ext, », →, excluding back buttons) and traverses up to 20 pages, accumulating all entries in scanAccum while eliminating duplicates.
+  - Safe failure: 200-tick timeout aborts if the menu fails to load. Empty scan results never overwrite or erase existing database entries.
+
+- **Actionbar Visit Detection & Dual Ownership Model**:
+  - Whenever the player walks into a plot, GermanMiner displays an action bar message:
+    - Personal plot: » Dieses Grundstück ist im Besitz von PflanzenKaktus
+    - Company plot: » Diese Mietzone ist im Besitz von SuperChaos (Firma)
+  - [PlotTracker.parseOwnerMessage](../common/src/main/java/de/pflanzenkaktus/enhancedgm/feature/PlotTracker.java) strips Minecraft color codes and extracts the owner name and company status.
+  - Ownership validation:
+    - Normal messages count only if ownerName.equalsIgnoreCase(clientPlayerName).
+    - Company messages count only if ownerName.equalsIgnoreCase(config.plotCompanyName) (configured in Settings).
+  - **Spatial Proximity Matching**:
+    - The player's current (x, z) position is matched against all stored plots within config.plotMatchRadiusBlocks (default 150m, adjustable 20–500m).
+    - The closest plot receives an updated lastVisitedEpochMs = System.currentTimeMillis().
+    - If multiple plots lie within the radius, the closest counts and a disambiguation chat notification lists the other nearby plots.
+    - Anti-spam feedback: Chat confirmation is throttled so walking back and forth across boundaries does not flood chat.
+
+- **Exact Datetime Formatting**:
+  - Visits are persisted as precise epoch timestamps.
+  - Displayed across chat warnings, overview screens, and HUD widgets with minute-level precision using dd.MM.yyyy HH:mm (e.g. 23.12.2026 19:48).
+
+- **First-Time User Prompting (PlotScanPromptScreen)**:
+  - ~5 seconds after connecting to GermanMiner, if no plots are saved in plots.json, a modal dialog appears asking the player to scan their plots.
+  - If a scan completes with 0 plots (the player currently owns nothing), the prompt is suppressed for 30 days (config.plotRescanPromptDays = 30) via config.plotLastScanEpochMs.
+
+- **Periodic In-Game Reminders & Dynamic HUD Widget**:
+  - **Chat Reminders**: Dispatched ~5 seconds after join and periodically every config.plotReminderIntervalMinutes (default 30 min, configurable from 0 = join-only to 120 min) whenever any plot is expired, expiring within config.plotReminderDaysBefore (slider 1 to 60 days), or has never been visited.
+  - **HUD Widget (plot_reminder)**: Displays the most critical plot, countdown days, exact date/time, and color-coded status bar (Green > threshold, Amber <= threshold, Red <= 3 days / expired). Automatically hides when all plots are safe. Movable and scalable in the HUD Layout Editor (H).
+
+- **In-Game Testing Facilities (No 60-Day Wait)**:
+  - **Jetzt prüfen (	est_reminder)**: Instantly executes the reminder check in chat and reports either expiring plots or confirms that all plots are safe with the nearest deadline.
+  - **Frist auf 2 Tage setzen (simulate_test_plot)**: Sets the first plot's timestamp to 58 days ago (2 days remaining) and triggers HUD and chat warnings immediately. If no plots exist, generates a sample plot kau2007 (Test) for testing.
+  - **Auf 60 Tage zurücksetzen (eset_test_plot)**: Restores the test plot's visit timestamp to the current time (full 60-day safety margin).
+  - **Threshold Slider**: Configurable up to 60 days so even freshly visited plots can trigger the warning pipeline if desired.
+
+- **Local Storage Architecture (plots.json)**:
+  - Persisted at config/gm-addon/plots.json.
+  - Grouped strictly by lowercase Minecraft account name:
+    `json
+    {
+      "accounts": {
+        "pflanzenkaktus": [
+          {
+            "name": "kau2007",
+            "type": "Grundstück",
+            "x": -2742,
+            "y": 126,
+            "z": -609,
+            "area": "Nördlicher Gebirgszug",
+            "lastVisitedEpochMs": 1792778000000
+          }
+        ]
+      }
+    }
+    `
+  - Rescan behavior: mergeScan preserves visit timestamps of matching plots (
+ame + x, y, z), appends newly discovered plots with lastVisitedEpochMs = 0, and prunes deleted/sold plots.
+  - Zero Cloud Footprint: Never uploaded to Firebase or external servers.
 
 ---

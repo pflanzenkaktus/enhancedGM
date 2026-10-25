@@ -13,6 +13,7 @@ import java.util.Optional;
 
 /**
  * Modular Spawn / Respawn Protection ("Spawnschutz") feature module.
+ * Test actions moved to DebugModule.
  */
 public class SpawnProtectionModule implements ClientFeatureModule {
     private final GMAddonClient addon;
@@ -199,13 +200,6 @@ public class SpawnProtectionModule implements ClientFeatureModule {
                     cfg.spawnProtectionScale = val.floatValue();
                     addon.saveConfig();
                 }
-            ),
-            new Setting.ActionSetting(
-                "test_spawnschutz",
-                I18n.get("gm-addon.setting.spawn_protection.test"),
-                I18n.get("gm-addon.setting.spawn_protection.test.btn"),
-                I18n.get("gm-addon.setting.spawn_protection.test.desc"),
-                () -> addon.getSpawnProtectionTracker().startTimer(cfg.spawnProtectionSeconds, I18n.get("gm-addon.setting.spawn_protection.test_label"))
             )
         );
     }

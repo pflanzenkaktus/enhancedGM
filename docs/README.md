@@ -11,6 +11,7 @@ Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1
 * **Blitzer-Warnsystem & Cloud-Sync**: 3D-Bojen, Annäherungswarnung, automatische Chat-Erkennung und Firebase-Sync.
 * **Tacho & Tempomat**: Analog- und Digital-Tacho, Auto-Abschaltung beim Bremsen (`S`) und Fahrzeugerkennung.
 * **20s Spawnschutz-Timer**: Automatischer Countdown bei Server-Join und Respawn.
+* **Grundstück-Erinnerung (60-Tage-Regel)**: Scan von `/menu` → Grundstücke & Wohnungen, Besuchserkennung über die Actionbar (Spieler oder Firma), Übersicht mit Frist und Join-Erinnerung.
 * **Magnetischer HUD-Editor (`H`)**: Frei verschiebbare HUD-Widgets mit Einrastfunktion (`Shift` = frei bewegen).
 
 ---
@@ -88,22 +89,22 @@ gm-addon/
 │   └── src/
 │       ├── main/java/de/pflanzenkaktus/enhancedgm/
 │       │   ├── config/          # AddonConfig.java (GSON persistence & defaults)
-│       │   ├── data/            # SpeedCameraRepository.java (Local JSON + Firebase REST sync & deduplication)
-│       │   ├── feature/         # BlitzerWarningTracker, SpawnProtectionTracker
+│       │   ├── data/            # SpeedCameraRepository.java, PlotRepository.java
+│       │   ├── feature/         # BlitzerWarningTracker, SpawnProtectionTracker, PlotTracker
 │       │   ├── map/             # BlueMapTileClient, BlueMapMarkerClient, LocalWebMapBridge
-│       │   ├── model/           # SpeedCamera, BlueMapMarker
+│       │   ├── model/           # SpeedCamera, BlueMapMarker, OwnedPlot
 │       │   └── module/          # AddonModule, HudWidgetDescriptor, Setting (sealed interface)
 │       └── test/java/de/pflanzenkaktus/enhancedgm/
-│           └── CoreSystemsTest.java # JUnit 5 test suite for tiles, Firebase, Blitzer, Tempomat
+│           └── CoreSystemsTest.java, PlotTrackerTest.java # JUnit 5 test suites
 └── v26_3/                       # Minecraft 26.3 Fabric client implementation & UI rendering
     └── src/main/
         ├── java/de/pflanzenkaktus/enhancedgm/client/
         │   ├── GMAddonClient.java           # ClientModInitializer entrypoint, keybinds & tick dispatcher
-        │   ├── compat/GMModMenuIntegration.java # Fabric Mod Menu config screen hook
+        │   ├── compat/GMModMenuIntegration.java, VersionCompat.java # Cross-version runtime hooks
         │   ├── map/BlueMapTextureCache.java # GPU DynamicTexture upload & caching for BlueMap tiles
-        │   ├── module/                      # ClientFeatureModule + ModuleManager + 5 feature modules
+        │   ├── module/                      # ClientFeatureModule + ModuleManager + 6 feature modules
         │   ├── render/HudOverlayRenderer.java # All 2D HUD widgets & 3D world projection rendering
-        │   └── screen/                      # GMSettingsScreen, HudEditorScreen, FullscreenMapScreen
+        │   └── screen/                      # GMSettingsScreen, HudEditorScreen, FullscreenMapScreen, PlotOverviewScreen, PlotScanPromptScreen
         └── resources/
             ├── fabric.mod.json
             └── assets/gm-addon/lang/        # de_de.json, en_us.json

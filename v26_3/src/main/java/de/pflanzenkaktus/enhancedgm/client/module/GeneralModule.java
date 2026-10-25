@@ -8,7 +8,8 @@ import de.pflanzenkaktus.enhancedgm.module.Setting;
 import java.util.List;
 
 /**
- * General addon settings module (Language, Server filter, Force Enable Everywhere, Second-Monitor Web Map Bridge).
+ * General addon settings module (Language, Layout Reset).
+ * Developer overrides and server domain patterns moved to DebugModule.
  */
 public class GeneralModule implements ClientFeatureModule {
     private final GMAddonClient addon;
@@ -54,26 +55,6 @@ public class GeneralModule implements ClientFeatureModule {
                 () -> cfg.language,
                 val -> {
                     cfg.language = val;
-                    addon.saveConfig();
-                }
-            ),
-            new Setting.BooleanSetting(
-                "force_enable_everywhere",
-                I18n.get("gm-addon.setting.force_enable_everywhere"),
-                I18n.get("gm-addon.setting.force_enable_everywhere.desc"),
-                () -> cfg.forceEnableEverywhere,
-                val -> {
-                    cfg.forceEnableEverywhere = val;
-                    addon.saveConfig();
-                }
-            ),
-            new Setting.StringSetting(
-                "server_domain_pattern",
-                I18n.get("gm-addon.setting.server_domain_pattern"),
-                I18n.get("gm-addon.setting.server_domain_pattern.desc"),
-                () -> cfg.serverDomainPattern,
-                val -> {
-                    cfg.serverDomainPattern = val;
                     addon.saveConfig();
                 }
             ),

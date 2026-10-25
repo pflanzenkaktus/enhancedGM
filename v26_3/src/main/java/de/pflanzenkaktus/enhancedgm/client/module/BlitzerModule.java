@@ -247,17 +247,6 @@ public class BlitzerModule implements ClientFeatureModule {
                     addon.saveConfig();
                 }
             ),
-            new Setting.DoubleSliderSetting(
-                "blitzer_dedupe_radius",
-                I18n.get("gm-addon.setting.blitzer.dedupe_radius"),
-                I18n.get("gm-addon.setting.blitzer.dedupe_radius.desc"),
-                10.0, 80.0, 2.0, " m",
-                () -> cfg.blitzerDedupeRadiusBlocks,
-                val -> {
-                    cfg.blitzerDedupeRadiusBlocks = val;
-                    addon.saveConfig();
-                }
-            ),
             new Setting.BooleanSetting(
                 "blitzer_3d_markers",
                 I18n.get("gm-addon.setting.blitzer.enable_3d_markers"),

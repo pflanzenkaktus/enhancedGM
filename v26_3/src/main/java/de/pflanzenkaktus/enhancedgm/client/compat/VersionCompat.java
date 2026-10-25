@@ -16,6 +16,98 @@ public final class VersionCompat {
 
     private VersionCompat() {}
 
+    private static boolean overlayFieldsResolved = false;
+    private static Field overlayMessageField;
+    private static Field overlayTimeField;
+    private static Object overlayOwner;
+
+    private static Field findField(Class<?> c, String name) {
+        for (; c != null && c != Object.class; c = c.getSuperclass()) {
+            try {
+                Field f = c.getDeclaredField(name);
+                f.setAccessible(true);
+                return f;
+            } catch (NoSuchFieldException ignored) {}
+        }
+        return null;
+    }
+
+    /**
+     * Returns the currently displayed action bar message component (or null), plus its remaining display
+     * time in ticks via {@code outTime[0]}. Works for packets that bypass Fabric's GAME message event
+     * (ClientboundSetActionBarTextPacket). Compatible with 26.3 (mc.gui.hud) and 26.1.2 (mc.gui).
+     */
+    public static net.minecraft.network.chat.Component getActionBarMessage(Minecraft mc, int[] outTime) {
+        try {
+            if (mc == null || mc.gui == null) return null;
+            Object gui = mc.gui;
+            Object hud = null;
+            try {
+                Field hf = gui.getClass().getField("hud");
+                hud = hf.get(gui);
+            } catch (NoSuchFieldException ignored) {}
+            Object[] owners = hud != null ? new Object[] {hud, gui} : new Object[] {gui};
+            if (!overlayFieldsResolved || overlayOwner == null || (overlayOwner != gui && overlayOwner != hud)) {
+                overlayFieldsResolved = true;
+                overlayMessageField = null;
+                overlayTimeField = null;
+                overlayOwner = null;
+                for (Object o : owners) {
+                    Field mf = findField(o.getClass(), "overlayMessageString");
+                    if (mf != null) {
+                        overlayMessageField = mf;
+                        overlayTimeField = findField(o.getClass(), "overlayMessageTime");
+                        overlayOwner = o;
+                        break;
+                    }
+                }
+            }
+            if (overlayMessageField == null) return null;
+            if (outTime != null && outTime.length > 0 && overlayTimeField != null) {
+                outTime[0] = overlayTimeField.getInt(overlayOwner);
+            }
+            Object v = overlayMessageField.get(overlayOwner);
+            return v instanceof net.minecraft.network.chat.Component c ? c : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Performs a left-click (PICKUP) on a slot of the currently open container menu.
+     * Compatible with 26.3 (handleContainerInput / ContainerInput) and 26.1.2 (handleInventoryMouseClick / ClickType).
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static boolean clickContainerSlot(Minecraft mc, int containerId, int slotIndex) {
+        if (mc == null || mc.gameMode == null || mc.player == null) return false;
+        try {
+            for (Method m : mc.gameMode.getClass().getMethods()) {
+                String n = m.getName();
+                if ((n.equals("handleContainerInput") || n.equals("handleInventoryMouseClick")) && m.getParameterCount() == 5) {
+                    Class<?>[] p = m.getParameterTypes();
+                    if (p[0] == int.class && p[1] == int.class && p[2] == int.class && p[3].isEnum()) {
+                        Object pickup = Enum.valueOf((Class<Enum>) p[3], "PICKUP");
+                        m.invoke(mc.gameMode, containerId, slotIndex, 0, pickup, mc.player);
+                        return true;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    /**
+     * Returns the Minecraft account name of the local player.
+     */
+    public static String getPlayerName(Minecraft mc) {
+        try {
+            if (mc != null && mc.getUser() != null) {
+                return mc.getUser().getName();
+            }
+        } catch (Throwable ignored) {}
+        return "";
+    }
+
     /**
      * Opens or switches to a GUI Screen.
      * Compatible with 26.3 (mc.gui.setScreen) and 26.1.2 (mc.setScreen).
