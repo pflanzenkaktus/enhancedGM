@@ -17,7 +17,7 @@ import java.util.List;
 public class AddonConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    // Auto-update checker & privacy consent
+    // Auto-update checker & opt-in consent
     public boolean checkUpdates = true;
     public boolean updateConsentPromptDismissed = false;
     public String latestReleaseUrl = "https://github.com/pflanzenkaktus/enhancedGM/releases/latest";

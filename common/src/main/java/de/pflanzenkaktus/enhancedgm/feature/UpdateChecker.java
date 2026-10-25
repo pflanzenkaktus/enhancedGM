@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 /**
- * Lightweight, privacy-compliant asynchronous GitHub release update checker.
+ * Lightweight asynchronous GitHub release update checker.
  * Only connects if consent was granted or when manually triggered in settings.
  */
 public class UpdateChecker {

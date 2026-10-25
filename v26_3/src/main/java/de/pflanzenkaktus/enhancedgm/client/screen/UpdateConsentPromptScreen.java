@@ -12,7 +12,7 @@ import net.minecraft.client.input.KeyEvent;
 /**
  * Initial setup popup dialog prompting the player whether to enable
  * automatic GitHub release update notifications.
- * Privacy-compliant opt-in: no player or telemetry data is transmitted.
+ * Opt-in prompt: asks before connecting to GitHub.
  */
 public class UpdateConsentPromptScreen extends Screen {
     private final GMAddonClient addon;
