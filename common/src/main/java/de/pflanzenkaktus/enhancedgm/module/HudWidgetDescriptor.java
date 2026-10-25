@@ -31,8 +31,8 @@ public interface HudWidgetDescriptor {
     default boolean isPointInside(double mx, double my) {
         int x = getX();
         int y = getY();
-        return mx >= x - 2 && mx <= x + getScaledWidth() + 2
-            && my >= y - 2 && my <= y + getScaledHeight() + 2;
+        return mx >= x && mx <= x + getScaledWidth()
+            && my >= y && my <= y + getScaledHeight();
     }
 
     void resetToDefault();

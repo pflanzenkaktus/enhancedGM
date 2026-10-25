@@ -64,16 +64,21 @@ public class HudOverlayRenderer {
 
         int x = cfg.minimapX;
         int y = cfg.minimapY;
-        int mapSize = Math.round(cfg.minimapSize * cfg.minimapScale);
+        float scale = cfg.minimapScale;
+        int baseSize = cfg.minimapSize;
         int footerHeight = 22;
-        int totalHeight = mapSize + footerHeight;
+        int totalHeight = baseSize + footerHeight;
+
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x, y);
+        graphics.pose().scale(scale, scale);
 
         // Outer card background & border
-        graphics.fill(x - 2, y - 2, x + mapSize + 2, y + totalHeight + 2, 0xCC0F172A);
-        graphics.outline(x - 2, y - 2, mapSize + 4, totalHeight + 4, 0xFF334155);
+        graphics.fill(0, 0, baseSize, totalHeight, 0xCC0F172A);
+        graphics.outline(0, 0, baseSize, totalHeight, 0xFF334155);
 
         // Map viewport background
-        graphics.fill(x, y, x + mapSize, y + mapSize, 0xFF0B1120);
+        graphics.fill(0, 0, baseSize, baseSize, 0xFF0B1120);
 
         LocalPlayer player = mc.player;
         double px = player != null ? player.getX() : -885.0;
@@ -81,12 +86,16 @@ public class HudOverlayRenderer {
         float playerYaw = player != null ? player.getViewYRot(partialTick) : 0.0f;
 
         double visibleBlocks = Math.max(40.0, cfg.minimapZoomBlocks);
-        double pixelsPerBlock = (double) mapSize / visibleBlocks;
-        int centerX = x + mapSize / 2;
-        int centerY = y + mapSize / 2;
+        double pixelsPerBlock = (double) baseSize / visibleBlocks;
+        int centerX = baseSize / 2;
+        int centerY = baseSize / 2;
 
-        // Clip map tiles and markers inside the minimap square
-        graphics.enableScissor(x, y, x + mapSize, y + mapSize);
+        // Clip map tiles and markers inside the minimap square (scissor uses absolute window coords)
+        int scissorX1 = Math.round(x + 1 * scale);
+        int scissorY1 = Math.round(y + 1 * scale);
+        int scissorX2 = Math.round(x + (baseSize - 1) * scale);
+        int scissorY2 = Math.round(y + (baseSize - 1) * scale);
+        graphics.enableScissor(scissorX1, scissorY1, scissorX2, scissorY2);
 
         graphics.pose().pushMatrix();
         graphics.pose().translate(centerX, centerY);
@@ -174,29 +183,70 @@ public class HudOverlayRenderer {
         double northAngleRad = cfg.minimapRotateWithPlayer
             ? Math.toRadians(180.0 - playerYaw - 90.0)
             : Math.toRadians(-90.0);
-        int compassRadius = (mapSize / 2) - 8;
+        int compassRadius = Math.max(12, (baseSize / 2) - 8);
         int nx = centerX + (int) Math.round(Math.cos(northAngleRad) * compassRadius);
         int ny = centerY + (int) Math.round(Math.sin(northAngleRad) * compassRadius);
+        nx = Math.clamp(nx, 7, baseSize - 7);
+        ny = Math.clamp(ny, 7, baseSize - 7);
         graphics.fill(nx - 5, ny - 5, nx + 6, ny + 6, 0xCC0F172A);
         graphics.centeredText(font, "N", nx + 1, ny - 3, 0xFFF87171);
 
         // Footer bar: Coordinates & Speed km/h
-        int footerY = y + mapSize + 2;
-        graphics.fill(x, footerY - 1, x + mapSize, y + totalHeight, 0xFF1E293B);
+        int footerY = baseSize;
+        graphics.fill(0, footerY, baseSize, totalHeight, 0xFF1E293B);
+
+        int maxFooterW = baseSize - 8;
         String coordText = String.format(Locale.ROOT, "%d, %d", (int) Math.floor(px), (int) Math.floor(pz));
         int speedKmh = (int) Math.round(addon.getBlitzerTracker().getCurrentSpeedKmh());
         String speedText = speedKmh + " km/h";
 
-        graphics.text(font, coordText, x + 4, footerY + 2, 0xFFE2E8F0, true);
-        int speedWidth = font.width(speedText);
-        int speedColor = speedKmh > 70 ? 0xFFF87171 : 0xFF38BDF8;
-        graphics.text(font, speedText, x + mapSize - speedWidth - 4, footerY + 2, speedColor, true);
+        int coordW = font.width(coordText);
+        int speedW = font.width(speedText);
+        int line1NeededW = coordW + speedW + 6;
+        float line1Scale = 1.0f;
+        if (line1NeededW > maxFooterW && maxFooterW > 10) {
+            line1Scale = (float) maxFooterW / line1NeededW;
+        }
 
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(4.0f, footerY + 2.0f);
+        if (line1Scale < 1.0f) {
+            graphics.pose().scale(line1Scale, line1Scale);
+        }
+        graphics.text(font, coordText, 0, 0, 0xFFE2E8F0, true);
+        int speedColor = speedKmh > 70 ? 0xFFF87171 : 0xFF38BDF8;
+        int speedDrawX = Math.round((maxFooterW / line1Scale) - speedW);
+        graphics.text(font, speedText, speedDrawX, 0, speedColor, true);
+        graphics.pose().popMatrix();
+
+        // Footer Line 2: Responsive shortcut hints
         String subLine = I18n.get("gm-addon.hud.minimap.subline");
-        if (font.width(subLine) > mapSize - 6) {
+        if (font.width(subLine) > maxFooterW) {
             subLine = I18n.get("gm-addon.hud.minimap.subline_short");
         }
-        graphics.text(font, subLine, x + 4, footerY + 11, 0xFF94A3B8, false);
+        if (font.width(subLine) > maxFooterW) {
+            subLine = "[M] Karte";
+        }
+        if (font.width(subLine) > maxFooterW) {
+            subLine = "[M]";
+        }
+
+        int subW = font.width(subLine);
+        float line2Scale = 1.0f;
+        if (subW > maxFooterW && maxFooterW > 10) {
+            line2Scale = (float) maxFooterW / subW;
+        }
+        if (line2Scale >= 0.60f) {
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(4.0f, footerY + 11.0f);
+            if (line2Scale < 1.0f) {
+                graphics.pose().scale(line2Scale, line2Scale);
+            }
+            graphics.text(font, subLine, 0, 0, 0xFF94A3B8, false);
+            graphics.pose().popMatrix();
+        }
+
+        graphics.pose().popMatrix();
     }
 
     /**
@@ -303,9 +353,7 @@ public class HudOverlayRenderer {
         }
         String timeStr = String.format(Locale.ROOT, "%.1fs", remainingSec);
 
-        int minWidth = 180;
-        int neededWidth = 30 + font.width(label) + 16 + font.width(timeStr) + 6;
-        int width = Math.max(minWidth, neededWidth);
+        int width = 210;
         int height = 34;
 
         int x = cfg.spawnProtectionX;
@@ -324,6 +372,11 @@ public class HudOverlayRenderer {
         graphics.fill(6, 6, 24, 24, accentColor);
         graphics.fill(8, 8, 22, 22, 0xFF0F172A);
         graphics.centeredText(font, "S", 15, 11, accentColor);
+
+        int maxLabelW = width - 30 - font.width(timeStr) - 12;
+        if (font.width(label) > maxLabelW) {
+            label = font.plainSubstrByWidth(label, Math.max(10, maxLabelW - 6)) + "...";
+        }
 
         graphics.text(font, label, 30, 6, 0xFFF8FAFC, true);
         graphics.text(font, timeStr, width - font.width(timeStr) - 6, 6, accentColor, true);
@@ -505,11 +558,14 @@ public class HudOverlayRenderer {
             tempomatText = I18n.get("gm-addon.hud.tacho.cruise_off", tempomatKmh);
         }
         if (fuelPercent >= 0.0f) {
-            tempomatText += " §8| §b" + Math.round(fuelPercent) + "%";
+            tempomatText += " | " + Math.round(fuelPercent) + "%";
         }
+        float maxAvailableTextW = width - 12;
+        int rawTextW = font.width(tempomatText);
+        float textScale = Math.min(0.8f, maxAvailableTextW / (float) Math.max(1, rawTextW));
         graphics.pose().pushMatrix();
         graphics.pose().translate(cx, height - 12);
-        graphics.pose().scale(0.8f, 0.8f);
+        graphics.pose().scale(textScale, textScale);
         graphics.centeredText(font, tempomatText, 0, 0, 0xFFF8FAFC);
         graphics.pose().popMatrix();
     }
@@ -557,7 +613,7 @@ public class HudOverlayRenderer {
         graphics.text(font, "km/h", 10 + digitsWidth, 24, 0xFF94A3B8, false);
 
         if (fuelPercent >= 0.0f) {
-            String fuelBadge = "⛽" + Math.round(fuelPercent) + "%";
+            String fuelBadge = "Tank " + Math.round(fuelPercent) + "%";
             int fuelColor = fuelPercent < 15.0f ? 0xFFEF4444 : (fuelPercent < 35.0f ? 0xFFF59E0B : 0xFF38BDF8);
             graphics.pose().pushMatrix();
             graphics.pose().translate(10.0f + digitsWidth, 36.0f);
@@ -584,9 +640,11 @@ public class HudOverlayRenderer {
             statusHeader = I18n.get("gm-addon.hud.tacho.card_cruise_off");
         }
 
+        int rawHeaderW = font.width(statusHeader);
+        float headerScale = Math.min(0.70f, (float) (boxW - 4) / Math.max(1, rawHeaderW));
         graphics.pose().pushMatrix();
         graphics.pose().translate(boxX + boxW / 2.0f, boxY + 3.0f);
-        graphics.pose().scale(0.70f, 0.70f);
+        graphics.pose().scale(headerScale, headerScale);
         graphics.centeredText(font, statusHeader, 0, 0, 0xFFF8FAFC);
         graphics.pose().popMatrix();
 

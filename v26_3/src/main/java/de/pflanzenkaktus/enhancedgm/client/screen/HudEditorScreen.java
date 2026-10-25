@@ -153,14 +153,14 @@ public class HudEditorScreen extends Screen {
             int ww = widget.getScaledWidth();
             int wh = widget.getScaledHeight();
 
-            graphics.outline(wx - 2, wy - 2, ww + 4, wh + 4, borderColor);
+            graphics.outline(wx, wy, ww, wh, borderColor);
 
             // Corner handles on hovered or dragged widget
             if (isDragging || isHovered) {
-                graphics.fill(wx - 3, wy - 3, wx, wy, borderColor);
-                graphics.fill(wx + ww, wy - 3, wx + ww + 3, wy, borderColor);
-                graphics.fill(wx - 3, wy + wh, wx, wy + wh + 3, borderColor);
-                graphics.fill(wx + ww, wy + wh, wx + ww + 3, wy + wh + 3, borderColor);
+                graphics.fill(wx - 1, wy - 1, wx + 2, wy + 2, borderColor);
+                graphics.fill(wx + ww - 2, wy - 1, wx + ww + 1, wy + 2, borderColor);
+                graphics.fill(wx - 1, wy + wh - 2, wx + 2, wy + wh + 1, borderColor);
+                graphics.fill(wx + ww - 2, wy + wh - 2, wx + ww + 1, wy + wh + 1, borderColor);
             }
 
             String tag = String.format(
@@ -172,8 +172,8 @@ public class HudEditorScreen extends Screen {
             );
             int tagW = this.font.width(tag) + 6;
             int tagY = Math.max(2, wy - 13);
-            graphics.fill(wx - 2, tagY, wx - 2 + tagW, tagY + 11, 0xD90F172A);
-            graphics.text(this.font, tag, wx + 1, tagY + 2, borderColor, false);
+            graphics.fill(wx, tagY, wx + tagW, tagY + 11, 0xD90F172A);
+            graphics.text(this.font, tag, wx + 3, tagY + 2, borderColor, false);
         }
 
         // Bottom control bar
