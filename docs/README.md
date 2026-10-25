@@ -21,6 +21,7 @@ Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1
 | Document | Audience | Contents |
 | :--- | :--- | :--- |
 | **[README.md](README.md)** | Users | Project overview, features, keybindings, build commands, and file layout. |
+| **[CHANGELOG.md](CHANGELOG.md)** | Users & Developers | Full version history and release notes across all releases. |
 | **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Developers | Deep-dive technical documentation on how every subsystem works internally (BlueMap tiles, Firebase sync, Blitzer auto-detection, Tacho/Tempomat sync, HUD rendering). |
 | **[docs/PLUGIN_AND_MODULE_GUIDE.md](docs/PLUGIN_AND_MODULE_GUIDE.md)** | Developers | Step-by-step developer guide with copy-pasteable templates for creating new feature modules ("plugins"), HUD widgets, Settings controls, and keybindings. |
 | **[docs/PRIVACY_AND_SECURITY.md](docs/PRIVACY_AND_SECURITY.md)** | Users & Developers | Technical privacy overview, transmitted data fields, local storage paths, and network security policies. |
@@ -49,13 +50,21 @@ Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1
      - Rate-limited command dispatcher (`1 command / 500ms`) for `/vehicles tempomat` (`G`), `/vehicles tempomat-plus` (`UP`), and `/vehicles tempomat-minus` (`DOWN`) so rapid key presses never trigger server spam kicks.
      - Stays in sync with GermanMiner's server-provided vehicle GUI menu via container slot click hooks, item lore/BossBar inspection, and steady-cruise self-healing auto-sync.
      - **Brake Auto-Disengage (`S`)**: Tapping the vehicle brake/reverse key instantly cancels Cruise Control without manual menu navigation.
+     - **Automatischer Motorstart (Auto Engine Start)**: Automatically starts vehicle engines via `/vehicles motor` upon entering when the BossBar indicates the engine is turned off (non-motorized vehicles like bikes, skateboards, and wheelchairs are smartly ignored).
 
 4. **20-Second Spawn / Respawn Protection Timer (`SpawnProtectionModule`)**:
    - Displays a 20s countdown bar on server join or player respawn, and cancels early if the server announces spawn protection expiration in chat.
 
-5. **Magnetic HUD Layout Editor (`HudEditorScreen`) & Modular Settings (`GMSettingsScreen`)**:
+5. **Grundstücks- & Wohnungs-Erinnerungs-System (`PlotModule`)**:
+   - **Enteignungs-Schutz (60-Tage-Regel)**: Verhindert das automatische Enteignen von Grundstücken und Wohnungen auf GermanMiner.
+   - **Automatischer GUI-Scanner**: Liest beim Öffnen von `/p a` alle Grundstücke und Wohnungen über mehrere Seiten und Ebenen hinweg vollautomatisch ein.
+   - **Live-Tracking & Chat-/ActionBar-Erkennung**: Aktualisiert die Frist automatisch beim Betreten eigener Grundstücke.
+   - **Vollbild-Übersicht (`PlotOverviewScreen`)**: Sortierbare Tabelle aller Grundstücke mit verbleibenden Tagen, Fristen und Farbwarnung.
+   - **HUD-Widget**: Zeigt das Grundstück mit der kürzesten verbleibenden Frist permanent oder bei Annäherung an die Warnschwelle an.
+
+6. **Magnetic HUD Layout Editor (`HudEditorScreen`) & Modular Settings (`GMSettingsScreen`)**:
    - **In-Game HUD Editor (`H`)**: Freely reposition all HUD widgets with smart magnetic snapping to screen edges, screen center axes, and neighboring widgets (hold `Shift` for free movement). Right-click any widget to toggle it ON/OFF, and use the scroll wheel to resize scale from 50% to 250% in clean 5% increments.
-   - **Modular Settings (`O`) & Mod Menu**: In-game configuration screen featuring categorical tabs, interactive sliders, and toggle switches, with full Fabric Mod Menu compatibility.
+   - **Modular Settings (`O`) & Mod Menu**: In-game configuration screen featuring categorical tabs, interactive sliders, toggle switches, and a dedicated **Debug & Erweitert** menu for simulation and developer actions.
    - **Privacy-First Community Cloud Sync**: Opt-in prompt on first startup (`CommunitySyncPromptScreen`) giving you complete control over whether speed camera positions sync with Firebase.
    - **Full Bilingual Localization**: Complete German (`de_de`) and English (`en_us`) language support with automatic client detection or in-game override.
 
