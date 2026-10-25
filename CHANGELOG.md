@@ -10,41 +10,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-10-25
 
 ### Added
-- **Automatischer Motorstart (Auto Engine Start)**:
-  - Automatisches Starten des Motors via `/vehicles motor` beim Einsteigen in motorisierte Fahrzeuge, sobald die BossBar den Motor als ausgeschaltet signalisiert.
-  - Intelligenter Filter schließt nicht-motorisierte Einheiten (Fahrräder, Skateboards, Rollstühle, Pferde, Kamele etc.) zuverlässig aus.
-  - Ein-/Ausschaltbar in den Einstellungen unter *Tacho & Tempomat*.
-- **Grundstücks- & Wohnungs-Erinnerungs-System (Plot Tracker)**:
-  - Schutz vor Enteignung: Verhindert das automatische Löschen/Clearen von Grundstücken und Wohnungen nach 60 Tagen Inaktivität.
-  - Multi-Page GUI-Scanner für `/p a` und das Regions-Menü zum automatischen Erfassen aller Grundstücke und Wohnungen.
-  - Automatische Frist-Aktualisierung beim Betreten eigener Grundstücke via Chat- und ActionBar-Erkennung (`Du betrittst das Grundstück...`).
-  - Neue Vollbild-Übersicht (`PlotOverviewScreen`) mit Sortierung nach Ablaufdatum, Resttagen und Dringlichkeits-Farben.
-  - Eigenes, verschiebbares HUD-Widget (`kau2007 (Grundstück) - 12 Tage verbleibend`) mit konfigurierbarem Vorwarn-Schwellenwert.
-- **Neues Einstellungsmenü „Debug & Erweitert“ (`DebugModule`)**:
-  - Sämtliche Entwickler-, Test- und Simulations-Funktionen wurden aus den regulären Modul-Ansichten in ein eigenes Menü gebündelt.
-  - Enthält: Spawnschutz-Simulation (20s), Grundstücks-Erinnerungstest, Ablauf-Simulation (2 Tage Restzeit) & Reset, Server-Domain-Regex-Filter, Entwickler-Override (`forceEnableEverywhere`), Tacho- & Blitzer-Kalibrierung sowie BlueMap Tile-Cache TTL und Sofort-Reload.
+- **Automatic Engine Start (Auto Motor Start)**:
+  - Automatically executes `/vehicles motor` upon mounting motorized vehicles whenever the BossBar indicates the engine is switched off.
+  - Smart vehicle filter prevents accidental triggers on non-motorized entities (bicycles, skateboards, wheelchairs, horses, camels, etc.).
+  - Configurable toggle in the settings screen under *Speedometer & Cruise Control*.
+- **Plot & Apartment Expiration Reminder System (Plot Tracker)**:
+  - Expropriation protection: Prevents automatic clearing of owned plots and apartments caused by GermanMiner's 60-day inactivity rule.
+  - Multi-page GUI menu scanner for `/p a` and region menus to automatically record and catalog all owned plots and apartments.
+  - Live boundary tracking: Automatically updates the deadline timestamp upon entering your own plot via Chat and ActionBar message detection (`Du betrittst das Grundstück...`).
+  - Fullscreen overview screen (`PlotOverviewScreen`) with sortable table view by expiration date, remaining days, and urgency color codes.
+  - Movable HUD Widget (`kau2007 (Grundstück) - 12 days left`) with configurable reminder threshold and repeat intervals.
+- **Dedicated "Debug & Advanced" Settings Menu (`DebugModule`)**:
+  - Clean separation: All simulation, test, and developer-level calibration tools have been moved from standard module views into a dedicated category.
+  - Includes: Spawn protection timer simulation (20s), plot reminder test trigger, plot expiration simulation (2 days left) and reset, server domain regex pattern filter, developer override (`forceEnableEverywhere`), speedometer and speed camera calibration factors, and BlueMap tile cache TTL management with instant cache wipe.
 
 ### Fixed
-- **Pixelgenaue HUD-Hitboxen & Bounding-Boxen**:
-  - Selektionsrahmen im HUD-Editor und Mausklick-Erkennungsbereiche (`isPointInside`) stimmen nun pixelgenau mit den gezeichneten Widget-Karten überein.
-  - Spawnschutz-Widget auf eine feste Basisbreite von 210 px mit automatischem Label-Clamping standardisiert (behob eine Abweichung von bis zu 35 px zwischen Karte und Rahmen).
-- **Minimap Viewport & Text-Containment**:
-  - Vollflächiges Kachel-Rendering im gesamten Minimap-Quadrat ohne innere Ränder oder Scissor-Versatz wiederhergestellt.
-  - Dynamische Schriftgrößen-Skalierung für Koordinaten und Tempo in Zeile 1 bei kleinen Kartengrößen (verhindert horizontales Überstehen).
-  - Mehrstufige Kürzungslogik für Hotkey-Hinweise (`[M] Karte [H] HUD [O] Opt.` -> `[M] Karte [H] HUD` -> `[M] Karte` -> `[M]`) inklusive vertikaler Ausblendung bei starker Verkleinerung.
-  - Die Kompassnadel (N) bleibt nun dauerhaft innerhalb der Minimap-Grenzen geklammert.
-- **Tacho Text- & UI-Polishing**:
-  - Tempomat- und Tankstatus-Texte in der analogen und digitalen Anzeige skalieren sich automatisch, damit sie selbst bei hohen Werten das Gehäuse nicht verlassen.
-  - HUD-Emoji durch standardkonformen Klartext (`Tank XX%`) ersetzt.
+- **Pixel-Perfect HUD Hitbox & Selection Frame Alignment**:
+  - Resolved sizing discrepancies where rendered widget cards extended beyond the HUD editor selection boxes and click boundaries (`isPointInside`).
+  - Standardized Spawn Protection widget dimensions to a fixed 210 px width with automatic label clamping, eliminating a prior 35 px overflow.
+- **Minimap Viewport & Responsive Text Containment**:
+  - Restored full edge-to-edge tile rendering across the entire minimap viewport without inner borders or scissor misalignment.
+  - Dynamic font scaling for coordinates and current speed in Line 1 under compact minimap sizes (prevents horizontal overflow past card borders).
+  - Multi-tier graceful degradation for shortcut badges (`[M] Map [H] HUD [O] Opt.` -> `[M] Map [H] HUD` -> `[M] Map` -> `[M]`) with automatic scaling and vertical omission at ultra-compact scales.
+  - Clamped Cardinal North (N) compass badge to remain strictly inside minimap boundaries.
+- **Speedometer Text Clamping & Polish**:
+  - Dynamically scaled cruise control and fuel percentage status texts in analog and digital dashboard modes to prevent horizontal text clipping.
+  - Replaced HUD emojis with clean, standard-compliant text badges (`Tank XX%`).
 
 ---
 
 ## [0.2.5] - 2026-10-23
 
 ### Fixed
-- **Tacho-Sitzpositions-Erkennung (Fixes #2)**:
-  - Der Tacho erscheint nicht mehr beim einfachen Hinsetzen auf den Boden (z. B. via `/sit`).
-  - Prüfung erweitert: Anzeige nur noch, wenn der Spieler tatsächlich in einem Fahrzeug sitzt und die offizielle Fahrzeug-BossBar aktiv ist.
+- **Speedometer Vehicle State Detection (Fixes #2)**:
+  - Fixed an issue where the speedometer appeared when sitting on the ground (e.g. via `/sit`).
+  - Added strict verification requiring both player vehicle mounting and active server vehicle BossBar presence.
 
 ---
 
@@ -52,9 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Initial Modular Release**:
-  - **Blitzer-Warnsystem**: Automatische Warnung vor Geschwindigkeitskameras (akustisch, 3D-Weltmarker, HUD-Badge & opt-in Firebase Cloud-Sync).
-  - **Tacho & Tempomat**: Analoge Rundanzeige und modernes digitales Dashboard mit automatischer Skalierung bis 320 km/h, Tank-Status und Tempomat-Shortcuts.
-  - **BlueMap Live-Minimap & Fullscreen-Karte**: GPU-beschleunigte Kacheldarstellung von map.germanminer.de mit Spieler-Ausrichtung, POI-Markern (Tankstellen, Taxis, Bus, S-Bahn) und Zoom.
-  - **Spawnschutz-Timer**: 20-Sekunden-Countdown bei Login, Respawn und Krankenhaus-Entlassung.
-  - **Magnetischer HUD-Editor**: Frei verschiebbare und stufenlos skalierbare Widgets mit automatischer Raster- und Kanten-Ausrichtung.
-  - **Cross-Version Architektur**: Vollständig kompatibel mit Minecraft 26.3 und vorbereitet für 26.1.
+  - **Speed Camera Alert System**: Audio chimes, 3D world markers, HUD warning cards, and opt-in Firebase cloud synchronization.
+  - **Speedometer & Cruise Control**: Switchable Analog and Digital dashboards calibrated to server km/h with rate-limited cruise control shortcuts.
+  - **BlueMap Live Minimap & Fullscreen Map**: GPU-accelerated tile streaming from map.germanminer.de with POI markers, rotation modes, and zoom controls.
+  - **Spawn Protection Timer**: 20-second countdown bar for server logins, respawns, and hospital discharges.
+  - **Magnetic HUD Layout Editor**: Visual drag-and-drop HUD arrangement with edge snapping and scale adjustments.
+  - **Cross-Version Architecture**: Full compatibility with Minecraft 26.3 and extensible modular design for 26.1.
