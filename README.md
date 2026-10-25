@@ -57,7 +57,7 @@ Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1
 
 5. **Grundstücks- & Wohnungs-Erinnerungs-System (`PlotModule`)**:
    - **Enteignungs-Schutz (60-Tage-Regel)**: Verhindert das automatische Enteignen von Grundstücken und Wohnungen auf GermanMiner.
-   - **Automatischer GUI-Scanner**: Liest beim Öffnen von `/p a` alle Grundstücke und Wohnungen über mehrere Seiten und Ebenen hinweg vollautomatisch ein.
+   - **Automatischer GUI-Scanner**: Liest beim Öffnen von `/menu` -> Grundstücke & Wohnungen alle Besitztümer über mehrere Seiten und Ebenen hinweg vollautomatisch ein.
    - **Live-Tracking & Chat-/ActionBar-Erkennung**: Aktualisiert die Frist automatisch beim Betreten eigener Grundstücke.
    - **Vollbild-Übersicht (`PlotOverviewScreen`)**: Sortierbare Tabelle aller Grundstücke mit verbleibenden Tagen, Fristen und Farbwarnung.
    - **HUD-Widget**: Zeigt das Grundstück mit der kürzesten verbleibenden Frist permanent oder bei Annäherung an die Warnschwelle an.

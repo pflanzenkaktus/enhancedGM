@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Configurable toggle in the settings screen under *Speedometer & Cruise Control*.
 - **Plot & Apartment Expiration Reminder System (Plot Tracker)**:
   - Expropriation protection: Prevents automatic clearing of owned plots and apartments caused by GermanMiner's 60-day inactivity rule.
-  - Multi-page GUI menu scanner for `/p a` and region menus to automatically record and catalog all owned plots and apartments.
+  - Multi-page GUI menu scanner for `/menu` (Grundstücke & Wohnungen) to automatically record and catalog all owned plots and apartments.
   - Live boundary tracking: Automatically updates the deadline timestamp upon entering your own plot via Chat and ActionBar message detection (`Du betrittst das Grundstück...`).
   - Fullscreen overview screen (`PlotOverviewScreen`) with sortable table view by expiration date, remaining days, and urgency color codes.
   - Movable HUD Widget (`kau2007 (Grundstück) - 12 days left`) with configurable reminder threshold and repeat intervals.
