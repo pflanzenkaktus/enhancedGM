@@ -2,6 +2,7 @@ package de.pflanzenkaktus.enhancedgm.client.render;
 
 import de.pflanzenkaktus.enhancedgm.client.GMAddonClient;
 import de.pflanzenkaktus.enhancedgm.client.map.BlueMapTextureCache;
+import de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen;
 import de.pflanzenkaktus.enhancedgm.client.screen.HudEditorScreen;
 import de.pflanzenkaktus.enhancedgm.client.util.I18n;
 import de.pflanzenkaktus.enhancedgm.config.AddonConfig;
@@ -15,14 +16,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.Locale;
 
+import static de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.uText;
+
 /**
- * Renders the modular GM-Addon HUD widgets (BlueMap Minimap, Speed Camera Alert, and
- * 20s Spawn/Respawn Protection) plus projected 3D World Markers for nearby Speed Cameras.
+ * Renders the modular GM-Addon HUD widgets in the Modern Ultra-HD Design Language:
+ * - 8x-supersampled bilinear-filtered 9-slice rounded cards (zero pixel staircases)
+ * - TrueType Calibri Bold HD typography (gm-addon:modern) with adaptive auto-fitting
+ * - 128x128 bilinear-filtered vector icons, circular speed signs, and analog dial rings
  */
 public class HudOverlayRenderer {
     private static final SpeedCamera PREVIEW_CAMERA = new SpeedCamera(
@@ -56,7 +63,7 @@ public class HudOverlayRenderer {
     }
 
     /**
-     * Renders the BlueMap Minimap centered on the player.
+     * Renders the BlueMap Minimap centered on the player in Modern Ultra-HD style.
      */
     public void renderMinimapWidget(GuiGraphicsExtractor graphics, Minecraft mc, float partialTick, boolean editorPreview) {
         AddonConfig cfg = addon.getConfig();
@@ -65,28 +72,40 @@ public class HudOverlayRenderer {
         int x = cfg.minimapX;
         int y = cfg.minimapY;
         int mapSize = Math.round(cfg.minimapSize * cfg.minimapScale);
-        int totalHeight = Math.round((cfg.minimapSize + 22) * cfg.minimapScale);
+        int footerBaseHeight = 0;
+        if (cfg.minimapShowSpeedAndHints) {
+            footerBaseHeight = 24;
+        } else if (cfg.minimapShowCoordinates) {
+            footerBaseHeight = 14;
+        }
+        int totalHeight = Math.round((cfg.minimapSize + footerBaseHeight) * cfg.minimapScale);
         int footerHeight = totalHeight - mapSize;
 
-        // Outer card background & border (exact bounds matching hitbox)
-        graphics.fill(x, y, x + mapSize, y + totalHeight, 0xCC0F172A);
-        graphics.outline(x, y, mapSize, totalHeight, 0xFF334155);
+        // Single clean 8x-supersampled Modern 9-slice card frame (no double border)
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_CARD_NORMAL, x, y, mapSize, totalHeight, 6);
 
-        // Map viewport background
-        graphics.fill(x, y, x + mapSize, y + mapSize, 0xFF0B1120);
+        // Inset map viewport by 2px right up to the single outer border
+        int pad = 2;
+        int viewX = x + pad;
+        int viewY = y + pad;
+        int viewW = Math.max(16, mapSize - pad * 2);
+        int viewH = Math.max(16, (footerHeight > 0 ? mapSize - pad : mapSize - pad * 2));
+
+        graphics.fill(viewX, viewY, viewX + viewW, viewY + viewH, 0xFF0B1120);
 
         LocalPlayer player = mc.player;
         double px = player != null ? player.getX() : -885.0;
+        double py = player != null ? player.getY() : 64.0;
         double pz = player != null ? player.getZ() : -2005.0;
         float playerYaw = player != null ? player.getViewYRot(partialTick) : 0.0f;
 
         double visibleBlocks = Math.max(40.0, cfg.minimapZoomBlocks);
-        double pixelsPerBlock = (double) mapSize / visibleBlocks;
-        int centerX = x + mapSize / 2;
-        int centerY = y + mapSize / 2;
+        double pixelsPerBlock = (double) viewW / visibleBlocks;
+        int centerX = viewX + viewW / 2;
+        int centerY = viewY + viewH / 2;
 
-        // Clip map tiles and markers inside the minimap square
-        graphics.enableScissor(x, y, x + mapSize, y + mapSize);
+        // Clip map tiles and markers inside the minimap viewport
+        graphics.enableScissor(viewX, viewY, viewX + viewW, viewY + viewH);
 
         graphics.pose().pushMatrix();
         graphics.pose().translate(centerX, centerY);
@@ -131,12 +150,12 @@ public class HudOverlayRenderer {
 
                 int mx = (int) Math.round(dx * pixelsPerBlock);
                 int my = (int) Math.round(dz * pixelsPerBlock);
-                graphics.fill(mx - 2, my - 2, mx + 3, my + 3, 0xFF000000);
+                graphics.fill(mx - 2, my - 2, mx + 3, my + 3, 0xCC000000);
                 graphics.fill(mx - 1, my - 1, mx + 2, my + 2, marker.colorArgb());
             }
         }
 
-        // Draw Speed Cameras ("Blitzer") on the minimap
+        // Draw Speed Cameras ("Blitzer") on the minimap using 128x128 HD circular speed sign texture
         if (cfg.showSpeedCamerasOnMap) {
             BlitzerWarningTracker.BlitzerAlert activeAlert = addon.getBlitzerTracker().getCurrentAlert();
             for (SpeedCamera cam : addon.getCameraRepository().getCameras()) {
@@ -148,101 +167,82 @@ public class HudOverlayRenderer {
                 int cy = (int) Math.round(dz * pixelsPerBlock);
                 boolean isAlerted = activeAlert != null && activeAlert.camera().id().equals(cam.id());
 
-                if (isAlerted && (System.currentTimeMillis() / 250L) % 2L == 0L) {
-                    graphics.fill(cx - 6, cy - 6, cx + 7, cy + 7, 0x88EF4444);
-                }
-                graphics.fill(cx - 4, cy - 4, cx + 5, cy + 5, 0xFFDC2626);
-                graphics.fill(cx - 2, cy - 2, cx + 3, cy + 3, 0xFFFFFFFF);
+                int iconSize = (isAlerted && (System.currentTimeMillis() / 250L) % 2L == 0L) ? 12 : 9;
+                GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SPEED_SIGN, cx - iconSize / 2, cy - iconSize / 2, iconSize, iconSize);
             }
         }
 
         graphics.pose().popMatrix();
         graphics.disableScissor();
 
-        // Draw Player Cursor in the exact center of the minimap
+        // Draw Player Cursor in the exact center of the minimap using 128x128 bilinear-filtered HD textures
         graphics.pose().pushMatrix();
         graphics.pose().translate(centerX, centerY);
-        if (!cfg.minimapRotateWithPlayer) {
-            graphics.pose().rotate((float) Math.toRadians(playerYaw + 180.0f));
+
+        float markerScale = Math.max(0.2f, Math.min(3.0f, cfg.minimapPlayerMarkerScale));
+        if (markerScale != 1.0f) {
+            graphics.pose().scale(markerScale, markerScale);
         }
-        graphics.fill(-3, -4, 4, 4, 0xFF0F172A);
-        graphics.fill(-2, -3, 3, 3, 0xFF38BDF8);
-        graphics.fill(-1, -5, 2, -2, 0xFFFFFFFF);
+
+        boolean isDot = "DOT".equalsIgnoreCase(cfg.minimapPlayerMarkerShape);
+        if (isDot) {
+            GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_PLAYER_DOT, -6, -6, 12, 12);
+        } else {
+            if (!cfg.minimapRotateWithPlayer) {
+                graphics.pose().rotate((float) Math.toRadians(playerYaw + 180.0f));
+            }
+            GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_PLAYER_ARROW, -7, -7, 14, 14);
+        }
         graphics.pose().popMatrix();
 
         // Draw Cardinal North badge on the minimap border
         double northAngleRad = cfg.minimapRotateWithPlayer
             ? Math.toRadians(180.0 - playerYaw - 90.0)
             : Math.toRadians(-90.0);
-        int compassRadius = Math.max(10, (mapSize / 2) - 8);
+        int compassRadius = Math.max(10, (viewW / 2) - 7);
         int nx = centerX + (int) Math.round(Math.cos(northAngleRad) * compassRadius);
         int ny = centerY + (int) Math.round(Math.sin(northAngleRad) * compassRadius);
-        nx = Math.clamp(nx, x + 6, x + mapSize - 6);
-        ny = Math.clamp(ny, y + 6, y + mapSize - 6);
-        graphics.fill(nx - 5, ny - 5, nx + 6, ny + 6, 0xCC0F172A);
-        graphics.centeredText(font, "N", nx + 1, ny - 3, 0xFFF87171);
+        nx = Math.clamp(nx, viewX + 7, viewX + viewW - 7);
+        ny = Math.clamp(ny, viewY + 7, viewY + viewH - 7);
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_HUD_ALERT_RED, nx - 6, ny - 6, 12, 12, 4);
+        GMSettingsScreen.drawCenteredFittedText(graphics, font, uText("N"), nx, ny - 4, 10, 0xFFFFFFFF, true);
 
-        // Footer bar: Coordinates & Speed km/h
-        int footerY = y + mapSize;
-        graphics.fill(x, footerY, x + mapSize, y + totalHeight, 0xFF1E293B);
+        if (footerHeight > 0) {
+            // Subtle single separator line between map and footer (no nested box border)
+            int footerY = y + mapSize;
+            graphics.fill(x + 2, footerY, x + mapSize - 2, footerY + 1, 0x3338BDF8);
 
-        int maxFooterW = mapSize - 8;
-        String coordText = String.format(Locale.ROOT, "%d, %d", (int) Math.floor(px), (int) Math.floor(pz));
-        int speedKmh = (int) Math.round(addon.getBlitzerTracker().getCurrentSpeedKmh());
-        String speedText = speedKmh + " km/h";
+            int maxFooterW = mapSize - 12;
+            String coordText = cfg.minimapShowCoordinates
+                ? String.format(Locale.ROOT, "%d, %d, %d", (int) Math.floor(px), (int) Math.floor(py), (int) Math.floor(pz))
+                : "";
+            int speedKmh = (int) Math.round(addon.getBlitzerTracker().getCurrentSpeedKmh());
+            String speedText = cfg.minimapShowSpeedAndHints ? (speedKmh + " km/h") : "";
 
-        int coordW = font.width(coordText);
-        int speedW = font.width(speedText);
-        int line1NeededW = coordW + speedW + 6;
-        float line1Scale = 1.0f;
-        if (line1NeededW > maxFooterW && maxFooterW > 10) {
-            line1Scale = (float) maxFooterW / line1NeededW;
-        }
-
-        float line1Y = footerHeight >= 18 ? (footerY + 2.0f) : (footerY + Math.max(1.0f, (footerHeight - 9.0f) / 2.0f));
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(x + 4.0f, line1Y);
-        if (line1Scale < 1.0f) {
-            graphics.pose().scale(line1Scale, line1Scale);
-        }
-        graphics.text(font, coordText, 0, 0, 0xFFE2E8F0, true);
-        int speedColor = speedKmh > 70 ? 0xFFF87171 : 0xFF38BDF8;
-        int speedDrawX = Math.round((maxFooterW / line1Scale) - speedW);
-        graphics.text(font, speedText, speedDrawX, 0, speedColor, true);
-        graphics.pose().popMatrix();
-
-        // Footer Line 2: Responsive shortcut hints
-        if (footerHeight >= 18) {
-            String subLine = I18n.get("gm-addon.hud.minimap.subline");
-            if (font.width(subLine) > maxFooterW) {
-                subLine = I18n.get("gm-addon.hud.minimap.subline_short");
-            }
-            if (font.width(subLine) > maxFooterW) {
-                subLine = "[M] Karte";
-            }
-            if (font.width(subLine) > maxFooterW) {
-                subLine = "[M]";
+            int line1Y = footerBaseHeight >= 18 ? (footerY + 3) : (footerY + Math.max(2, (footerHeight - 10) / 2));
+            if (!coordText.isEmpty() && !speedText.isEmpty()) {
+                Component speedComp = uText(speedText);
+                int speedW = Math.min(maxFooterW / 2 - 2, font.width(speedComp));
+                int speedColor = speedKmh > 70 ? 0xFFF87171 : 0xFF38BDF8;
+                GMSettingsScreen.drawFittedText(graphics, font, speedComp, x + mapSize - 6 - speedW, line1Y, speedW, speedColor, true);
+                GMSettingsScreen.drawFittedText(graphics, font, uText(coordText), x + 6, line1Y, maxFooterW - speedW - 6, 0xFFF1F5F9, true);
+            } else if (!coordText.isEmpty()) {
+                GMSettingsScreen.drawCenteredFittedText(graphics, font, uText(coordText), x + mapSize / 2, line1Y, maxFooterW, 0xFFF1F5F9, true);
+            } else if (!speedText.isEmpty()) {
+                int speedColor = speedKmh > 70 ? 0xFFF87171 : 0xFF38BDF8;
+                GMSettingsScreen.drawCenteredFittedText(graphics, font, uText(speedText), x + mapSize / 2, line1Y, maxFooterW, speedColor, true);
             }
 
-            int subW = font.width(subLine);
-            float line2Scale = 1.0f;
-            if (subW > maxFooterW && maxFooterW > 10) {
-                line2Scale = (float) maxFooterW / subW;
-            }
-            if (line2Scale >= 0.60f) {
-                graphics.pose().pushMatrix();
-                graphics.pose().translate(x + 4.0f, footerY + 11.0f);
-                if (line2Scale < 1.0f) {
-                    graphics.pose().scale(line2Scale, line2Scale);
-                }
-                graphics.text(font, subLine, 0, 0, 0xFF94A3B8, false);
-                graphics.pose().popMatrix();
+            // Footer Line 2: Responsive shortcut hints in Calibri Bold
+            if (cfg.minimapShowSpeedAndHints && footerHeight >= 18) {
+                String subLine = I18n.get("gm-addon.hud.minimap.subline");
+                GMSettingsScreen.drawCenteredFittedText(graphics, font, uText(subLine), x + mapSize / 2, footerY + 13, maxFooterW, 0xFF94A3B8, false);
             }
         }
     }
 
     /**
-     * Renders the Speed Camera ("Blitzer") Warning HUD Widget when approaching a camera.
+     * Renders the Speed Camera ("Blitzer") Warning HUD Widget in Modern Ultra-HD style.
      */
     public void renderBlitzerAlertWidget(GuiGraphicsExtractor graphics, Minecraft mc, boolean editorPreview) {
         BlitzerWarningTracker.BlitzerAlert alert = addon.getBlitzerTracker().getCurrentAlert();
@@ -262,61 +262,59 @@ public class HudOverlayRenderer {
         int width = 186;
         int height = 46;
 
-        boolean flashing = (alert.urgency() == BlitzerWarningTracker.Urgency.OVER_SPEED_LIMIT
-            || alert.urgency() == BlitzerWarningTracker.Urgency.URGENT)
-            && ((System.currentTimeMillis() / 280L) % 2L == 0L);
+        boolean isOverLimit = alert.urgency() == BlitzerWarningTracker.Urgency.OVER_SPEED_LIMIT;
+        boolean isUrgent = alert.urgency() == BlitzerWarningTracker.Urgency.URGENT;
+        boolean flashing = (isOverLimit || isUrgent) && ((System.currentTimeMillis() / 280L) % 2L == 0L);
 
-        int borderColor = switch (alert.urgency()) {
-            case OVER_SPEED_LIMIT -> flashing ? 0xFFEF4444 : 0xFF991B1B;
-            case URGENT -> flashing ? 0xFFF97316 : 0xFFB45309;
-            default -> 0xFFEAB308;
-        };
+        Identifier cardTex = (isOverLimit || (isUrgent && flashing))
+            ? GMSettingsScreen.TEX_HUD_ALERT_RED
+            : GMSettingsScreen.TEX_HUD_ALERT_AMBER;
+        Identifier barTex = isOverLimit ? GMSettingsScreen.TEX_BAR_FILL_RED : GMSettingsScreen.TEX_BAR_FILL_AMBER;
 
         graphics.pose().pushMatrix();
         graphics.pose().translate(x, y);
         graphics.pose().scale(scale, scale);
 
-        graphics.fill(0, 0, width, height, 0xD90F172A);
-        graphics.outline(0, 0, width, height, borderColor);
+        // Smooth 8x-supersampled 9-slice alert card
+        GMSettingsScreen.drawNineSlice(graphics, cardTex, 0, 0, width, height, 8);
 
+        // Circular 128x128 HD European Speed Limit Sign
         int signX = 7;
-        int signY = 7;
-        int signSize = 32;
-        graphics.fill(signX, signY, signX + signSize, signY + signSize, 0xFFDC2626);
-        graphics.fill(signX + 4, signY + 4, signX + signSize - 4, signY + signSize - 4, 0xFFFFFFFF);
-        String limitStr = Integer.toString(alert.speedLimitKmh());
-        int limitTextX = signX + (signSize - font.width(limitStr)) / 2;
-        graphics.text(font, limitStr, limitTextX, signY + 12, 0xFF0F172A, false);
+        int signY = 6;
+        int signSize = 30;
+        GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SPEED_SIGN, signX, signY, signSize, signSize);
+        Component limitComp = uText(Integer.toString(alert.speedLimitKmh()));
+        GMSettingsScreen.drawCenteredFittedText(graphics, font, limitComp, signX + signSize / 2, signY + (signSize - 8) / 2, signSize - 10, 0xFF0F172A, false);
 
-        String header = alert.urgency() == BlitzerWarningTracker.Urgency.OVER_SPEED_LIMIT
+        int textX = 43;
+        int maxTextW = width - textX - 7;
+
+        String header = isOverLimit
             ? I18n.get("gm-addon.hud.blitzer.warning")
             : I18n.get("gm-addon.hud.blitzer.ahead");
-        int headerColor = alert.urgency() == BlitzerWarningTracker.Urgency.OVER_SPEED_LIMIT
-            ? 0xFFF87171
-            : 0xFFFACC15;
-        graphics.text(font, header, 46, 6, headerColor, true);
+        int headerColor = isOverLimit ? 0xFFFCA5A5 : 0xFFFDE047;
+        GMSettingsScreen.drawFittedText(graphics, font, uText(header), textX, 6, maxTextW, headerColor, true);
 
-        String camName = alert.camera().name();
-        if (font.width(camName) > 132) {
-            camName = font.plainSubstrByWidth(camName, 126) + "...";
-        }
-        graphics.text(font, camName, 46, 17, 0xFFF8FAFC, true);
+        GMSettingsScreen.drawFittedText(graphics, font, uText(alert.camera().name()), textX, 16, maxTextW, 0xFFFFFFFF, true);
 
         int distMeters = (int) Math.round(alert.distanceBlocks());
         int curSpeed = (int) Math.round(alert.currentSpeedKmh());
         String infoLine = I18n.get("gm-addon.common.distance", distMeters, curSpeed);
-        graphics.text(font, infoLine, 46, 29, 0xFFCBD5E1, false);
+        GMSettingsScreen.drawFittedText(graphics, font, uText(infoLine), textX, 27, maxTextW, 0xFFCBD5E1, false);
 
+        // Smooth rounded proximity progress bar at the bottom
         double maxDist = Math.max(20.0, cfg.warningDistanceBlocks);
         float proximityRatio = (float) Math.clamp(1.0 - (alert.distanceBlocks() / maxDist), 0.05, 1.0);
-        int barWidth = Math.round((width - 4) * proximityRatio);
-        graphics.fill(2, height - 4, 2 + barWidth, height - 2, borderColor);
+        int barTrackW = width - 12;
+        int barFillW = Math.max(8, Math.round(barTrackW * proximityRatio));
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_SLIDER_TRACK, 6, height - 7, barTrackW, 4, 2);
+        GMSettingsScreen.drawNineSlice(graphics, barTex, 6, height - 7, barFillW, 4, 2);
 
         graphics.pose().popMatrix();
     }
 
     /**
-     * Renders the 20-second Spawn / Respawn Protection ("Spawnschutz") HUD Widget.
+     * Renders the 20-second Spawn / Respawn Protection ("Spawnschutz") HUD Widget in Modern Ultra-HD style.
      */
     public void renderSpawnProtectionWidget(GuiGraphicsExtractor graphics, Minecraft mc, boolean editorPreview) {
         SpawnProtectionTracker tracker = addon.getSpawnProtectionTracker();
@@ -356,37 +354,41 @@ public class HudOverlayRenderer {
         graphics.pose().translate(x, y);
         graphics.pose().scale(scale, scale);
 
-        int accentColor = remainingSec <= 5.0 ? 0xFFF59E0B : 0xFF10B981;
+        boolean warningSoon = remainingSec <= 5.0;
+        Identifier cardTex = warningSoon ? GMSettingsScreen.TEX_HUD_ALERT_AMBER : GMSettingsScreen.TEX_HUD_ALERT_GREEN;
+        Identifier barTex = warningSoon ? GMSettingsScreen.TEX_BAR_FILL_AMBER : GMSettingsScreen.TEX_BAR_FILL_GREEN;
+        int accentColor = warningSoon ? 0xFFFBBF24 : 0xFF34D399;
 
-        graphics.fill(0, 0, width, height, 0xD90F172A);
-        graphics.outline(0, 0, width, height, accentColor);
+        // Smooth 8x-supersampled 9-slice card
+        GMSettingsScreen.drawNineSlice(graphics, cardTex, 0, 0, width, height, 8);
 
-        graphics.fill(6, 6, 24, 24, accentColor);
-        graphics.fill(8, 8, 22, 22, 0xFF0F172A);
-        graphics.centeredText(font, "S", 15, 11, accentColor);
+        // Left 22x22 rounded icon badge with 128x128 HD Shield Icon
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_CONTAINER_BG, 6, 6, 22, 22, 6);
+        GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.ICON_PROTECTION, 9, 9, 16, 16);
 
-        int maxLabelW = width - 30 - font.width(timeStr) - 12;
-        if (font.width(label) > maxLabelW) {
-            label = font.plainSubstrByWidth(label, Math.max(10, maxLabelW - 6)) + "...";
-        }
+        Component timeComp = uText(timeStr);
+        int timeW = font.width(timeComp);
+        graphics.text(font, timeComp, width - timeW - 7, 7, accentColor, true);
 
-        graphics.text(font, label, 30, 6, 0xFFF8FAFC, true);
-        graphics.text(font, timeStr, width - font.width(timeStr) - 6, 6, accentColor, true);
+        int maxLabelW = width - 34 - timeW - 12;
+        GMSettingsScreen.drawFittedText(graphics, font, uText(label), 33, 7, maxLabelW, 0xFFFFFFFF, true);
 
-        int barX = 30;
+        // Smooth rounded progress bar
+        int barX = 33;
         int barY = 20;
-        int barW = width - barX - 6;
-        graphics.fill(barX, barY, barX + barW, barY + 6, 0xFF1E293B);
-        int fillW = Math.round(barW * progress);
-        graphics.fill(barX, barY, barX + fillW, barY + 6, accentColor);
+        int barW = width - barX - 7;
+        int barH = 6;
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_SLIDER_TRACK, barX, barY, barW, barH, 3);
+        int fillW = Math.round(barW * Math.clamp(progress, 0.0f, 1.0f));
+        if (fillW > 2) {
+            GMSettingsScreen.drawNineSlice(graphics, barTex, barX, barY, Math.max(8, fillW), barH, 3);
+        }
 
         graphics.pose().popMatrix();
     }
 
-
     /**
-     * Renders the Speedometer ("Tacho") HUD Widget in either ANALOG or DIGITAL style,
-     * including the active Tempomat speed and status.
+     * Renders the Speedometer ("Tacho") HUD Widget in either ANALOG or DIGITAL Modern Ultra-HD style.
      */
     public void renderTachoWidget(GuiGraphicsExtractor graphics, Minecraft mc, float partialTick, boolean editorPreview) {
         AddonConfig cfg = addon.getConfig();
@@ -412,7 +414,6 @@ public class HudOverlayRenderer {
         BlitzerWarningTracker.BlitzerAlert activeAlert = tracker.getCurrentAlert();
         int speedLimit = activeAlert != null ? activeAlert.speedLimitKmh() : 70;
         int configMax = Math.max(80, cfg.tachoMaxKmh);
-        // Automatically auto-scale dial maximum for high-speed vehicles or aircraft so needle never clips
         int maxKmh = Math.max(configMax, (int) Math.ceil((speedKmh + 5.0) / 20.0) * 20);
         if (maxKmh < 160) maxKmh = 160;
 
@@ -448,24 +449,23 @@ public class HudOverlayRenderer {
         int width = 112;
         int height = 112;
         int cx = 56;
-        int cy = 53;
-        int radius = 40;
+        int cy = 49;
+        int radius = 38;
 
         boolean overLimit = hasActiveAlert && (speedKmh > speedLimit + 2);
-        int borderColor = overLimit ? 0xFFEF4444 : ((tempomatOn && tempomatAvailable) ? 0xFF10B981 : 0xFF334155);
+        Identifier housingTex = overLimit
+            ? GMSettingsScreen.TEX_HUD_ALERT_RED
+            : ((tempomatOn && tempomatAvailable) ? GMSettingsScreen.TEX_HUD_ALERT_GREEN : GMSettingsScreen.TEX_WINDOW_BG);
 
-        // Instrument housing background
-        graphics.fill(0, 0, width, height, 0xD90B1120);
-        graphics.outline(0, 0, width, height, borderColor);
+        // Smooth 8x-supersampled 9-slice instrument housing
+        GMSettingsScreen.drawNineSlice(graphics, housingTex, 0, 0, width, height, 8);
 
-        // Inner dial face
-        graphics.fill(cx - radius + 4, cy - radius + 4, cx + radius - 4, cy + radius - 4, 0x880F172A);
+        // 256x256 Ultra-HD Bilinear-Filtered Circular Dial Face
+        GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_TACHO_DIAL, cx - 43, cy - 43, 86, 86);
 
-        // Sweep from -125 deg (bottom-left, where 0 deg = top/12 o'clock) to +125 deg (bottom-right)
         double startDeg = -125.0;
         double sweepDeg = 250.0;
 
-        // Draw tick marks around the circular arc every 10 km/h
         int step = maxKmh > 180 ? 20 : 10;
         for (int v = 0; v <= maxKmh; v += step) {
             double ratio = (double) v / maxKmh;
@@ -475,10 +475,8 @@ public class HudOverlayRenderer {
             double sin = Math.sin(rad);
 
             boolean major = (v % 40 == 0) || v == maxKmh;
-            int outerX = cx + (int) Math.round(cos * radius);
-            int outerY = cy + (int) Math.round(sin * radius);
-            int innerX = cx + (int) Math.round(cos * (radius - (major ? 6 : 3)));
-            int innerY = cy + (int) Math.round(sin * (radius - (major ? 6 : 3)));
+            int outerX = cx + (int) Math.round(cos * (radius - 2));
+            int outerY = cy + (int) Math.round(sin * (radius - 2));
 
             int tickColor;
             if (hasActiveAlert && v > speedLimit) {
@@ -486,37 +484,35 @@ public class HudOverlayRenderer {
             } else if ((double) v <= speedKmh && speedKmh > 0.5) {
                 tickColor = 0xFF38BDF8;
             } else {
-                tickColor = major ? 0xFFE2E8F0 : 0xFF64748B;
+                tickColor = major ? 0xFFF1F5F9 : 0xFF64748B;
             }
 
-            graphics.fill(outerX - 1, outerY - 1, outerX + 2, outerY + 2, tickColor);
+            graphics.fill(outerX - 1, outerY - 1, outerX + 1, outerY + 1, tickColor);
             if (major) {
-                graphics.fill(innerX - 1, innerY - 1, innerX + 1, innerY + 1, tickColor);
-                // Speed number label inside the dial
-                int labelR = radius - 14;
+                int labelR = radius - 11;
                 int lx = cx + (int) Math.round(cos * labelR);
                 int ly = cy + (int) Math.round(sin * labelR);
-                String numStr = Integer.toString(v);
+                Component numComp = uText(Integer.toString(v));
+                int nw = font.width(numComp);
                 graphics.pose().pushMatrix();
-                graphics.pose().translate((float) lx, (float) ly);
-                graphics.pose().scale(0.65f, 0.65f);
-                graphics.centeredText(font, numStr, 0, -4, 0xFFCBD5E1);
+                graphics.pose().translate((float) lx - (nw * 0.60f) * 0.5f, (float) ly - 2.5f);
+                graphics.pose().scale(0.60f, 0.60f);
+                graphics.text(font, numComp, 0, 0, 0xFFCBD5E1, false);
                 graphics.pose().popMatrix();
             }
         }
 
-        // Draw Tempomat target marker on the outer rim of the analog dial
+        // Tempomat target marker on outer rim using HD GPS dot texture
         if (tempomatAvailable && tempomatKmh > 0) {
             double tRatio = Math.clamp((double) tempomatKmh / maxKmh, 0.0, 1.0);
             double tDeg = startDeg + tRatio * sweepDeg;
             double tRad = Math.toRadians(tDeg - 90.0);
-            int tx = cx + (int) Math.round(Math.cos(tRad) * (radius + 3));
-            int ty = cy + (int) Math.round(Math.sin(tRad) * (radius + 3));
-            int tColor = tempomatOn ? 0xFF10B981 : 0xFF64748B;
-            graphics.fill(tx - 2, ty - 2, tx + 3, ty + 3, tColor);
+            int tx = cx + (int) Math.round(Math.cos(tRad) * (radius + 1));
+            int ty = cy + (int) Math.round(Math.sin(tRad) * (radius + 1));
+            GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_PLAYER_DOT, tx - 4, ty - 4, 8, 8);
         }
 
-        // Draw rotating speedometer needle
+        // Rotating speedometer needle
         double speedRatio = Math.clamp(speedKmh / maxKmh, 0.0, 1.0);
         float needleDeg = (float) (startDeg + speedRatio * sweepDeg);
         int needleColor = overLimit ? 0xFFEF4444 : 0xFF38BDF8;
@@ -524,23 +520,23 @@ public class HudOverlayRenderer {
         graphics.pose().pushMatrix();
         graphics.pose().translate((float) cx, (float) cy);
         graphics.pose().rotate((float) Math.toRadians(needleDeg));
-        // Needle shaft pointing up (0 deg = -Y)
-        graphics.fill(-1, -(radius - 5), 2, 5, needleColor);
-        graphics.fill(0, -(radius - 2), 1, -(radius - 5), 0xFFFFFFFF);
+        graphics.fill(-1, -(radius - 6), 1, 4, needleColor);
+        graphics.fill(-1, -(radius - 3), 1, -(radius - 6), 0xFFFFFFFF);
         graphics.pose().popMatrix();
 
-        // Center hub cap
-        graphics.fill(cx - 4, cy - 4, cx + 5, cy + 5, 0xFF1E293B);
-        graphics.fill(cx - 2, cy - 2, cx + 3, cy + 3, needleColor);
+        // Smooth Circular Center Hub Cap with Gaussian Shadow
+        GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SWITCH_KNOB, cx - 5, cy - 5, 10, 10);
 
-        // Digital km/h readout inside lower dial
+        // Digital km/h readout inside lower dial in Calibri Bold
         int roundedSpeed = (int) Math.round(speedKmh);
-        String speedStr = roundedSpeed + " km/h";
-        int speedColor = overLimit ? 0xFFF87171 : 0xFFF8FAFC;
-        graphics.centeredText(font, speedStr, cx, cy + 12, speedColor);
+        Component speedComp = uText(roundedSpeed + " km/h");
+        int speedColor = overLimit ? 0xFFFCA5A5 : 0xFFFFFFFF;
+        GMSettingsScreen.drawCenteredFittedText(graphics, font, speedComp, cx, cy + 13, 60, speedColor, true);
 
-        // Bottom Tempomat status bar
-        graphics.fill(4, height - 16, width - 4, height - 3, 0xFF1E293B);
+        // Bottom Tempomat & Fuel rounded status pill
+        Identifier pillTex = (tempomatAvailable && tempomatOn) ? GMSettingsScreen.TEX_CAT_ACTIVE : GMSettingsScreen.TEX_CONTAINER_BG;
+        GMSettingsScreen.drawNineSlice(graphics, pillTex, 5, height - 19, width - 10, 15, 5);
+
         String tempomatText;
         if (!tempomatAvailable) {
             tempomatText = I18n.get("gm-addon.hud.tacho.no_cruise");
@@ -552,14 +548,8 @@ public class HudOverlayRenderer {
         if (fuelPercent >= 0.0f) {
             tempomatText += " | " + Math.round(fuelPercent) + "%";
         }
-        float maxAvailableTextW = width - 12;
-        int rawTextW = font.width(tempomatText);
-        float textScale = Math.min(0.8f, maxAvailableTextW / (float) Math.max(1, rawTextW));
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(cx, height - 12);
-        graphics.pose().scale(textScale, textScale);
-        graphics.centeredText(font, tempomatText, 0, 0, 0xFFF8FAFC);
-        graphics.pose().popMatrix();
+        int statusColor = !tempomatAvailable ? 0xFF94A3B8 : (tempomatOn ? 0xFFFFFFFF : 0xFFE2E8F0);
+        GMSettingsScreen.drawCenteredFittedText(graphics, font, uText(tempomatText), cx, height - 15, width - 18, statusColor, true);
     }
 
     private void renderDigitalTacho(
@@ -577,51 +567,56 @@ public class HudOverlayRenderer {
         int width = 136;
         int height = 62;
         int roundedSpeed = (int) Math.round(speedKmh);
-        boolean overLimit = roundedSpeed > speedLimit + 2;
+        boolean overLimit = hasActiveAlert && (roundedSpeed > speedLimit + 2);
 
-        int accentColor = overLimit ? 0xFFEF4444 : ((tempomatOn && tempomatAvailable) ? 0xFF10B981 : 0xFF38BDF8);
+        Identifier cardTex = overLimit
+            ? GMSettingsScreen.TEX_HUD_ALERT_RED
+            : ((tempomatOn && tempomatAvailable) ? GMSettingsScreen.TEX_HUD_ALERT_GREEN : GMSettingsScreen.TEX_WINDOW_BG);
 
-        // Card background & border
-        graphics.fill(0, 0, width, height, 0xD90B1120);
-        graphics.outline(0, 0, width, height, accentColor);
+        // Smooth 8x-supersampled 9-slice card background
+        GMSettingsScreen.drawNineSlice(graphics, cardTex, 0, 0, width, height, 8);
 
         // Top header bar
-        graphics.fill(1, 1, width - 1, 13, 0xFF1E293B);
-        graphics.text(font, I18n.get("gm-addon.hud.tacho.title"), 6, 3, 0xFFF8FAFC, false);
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_CONTAINER_BG, 4, 4, width - 8, 13, 5);
+        GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.ICON_TACHO, 7, 5, 10, 10);
+        GMSettingsScreen.drawFittedText(graphics, font, uText(I18n.get("gm-addon.hud.tacho.title")), 20, 7, 56, 0xFF38BDF8, true);
 
-        String limitBadge = hasActiveAlert ? ("§cLimit " + speedLimit) : ("§7Max " + maxKmh);
-        graphics.text(font, limitBadge, width - font.width(limitBadge) - 5, 3, 0xFFCBD5E1, false);
+        String limitBadge = hasActiveAlert ? ("Limit " + speedLimit) : ("Max " + maxKmh);
+        int limitColor = hasActiveAlert ? 0xFFFCA5A5 : 0xFF94A3B8;
+        Component limitComp = uText(limitBadge);
+        int limitW = font.width(limitComp);
+        GMSettingsScreen.drawFittedText(graphics, font, limitComp, width - limitW - 8, 7, 56, limitColor, false);
 
-        // Large 2.0x Digital Speed Readout on the left
-        String speedDigits = String.format(Locale.ROOT, "%d", roundedSpeed);
-        int digitColor = overLimit ? 0xFFF87171 : 0xFFF8FAFC;
+        // Large Digital Speed Readout on the left in Calibri Bold
+        Component speedDigitsComp = uText(String.format(Locale.ROOT, "%d", roundedSpeed));
+        int digitColor = overLimit ? 0xFFFCA5A5 : 0xFFFFFFFF;
+        int rawDigitW = font.width(speedDigitsComp);
+        float digitScale = (rawDigitW * 1.85f > 44.0f) ? (44.0f / Math.max(1.0f, rawDigitW)) : 1.85f;
+
         graphics.pose().pushMatrix();
-        graphics.pose().translate(8.0f, 18.0f);
-        graphics.pose().scale(2.0f, 2.0f);
-        graphics.text(font, speedDigits, 0, 0, digitColor, true);
+        graphics.pose().translate(8.0f, 21.0f);
+        graphics.pose().scale(digitScale, digitScale);
+        graphics.text(font, speedDigitsComp, 0, 0, digitColor, true);
         graphics.pose().popMatrix();
 
-        int digitsWidth = font.width(speedDigits) * 2;
-        graphics.text(font, "km/h", 10 + digitsWidth, 24, 0xFF94A3B8, false);
+        int digitsWidth = Math.round(rawDigitW * digitScale);
+        int unitX = 11 + digitsWidth;
+        int maxUnitW = Math.max(18, 72 - unitX);
+        GMSettingsScreen.drawFittedText(graphics, font, uText("km/h"), unitX, 22, maxUnitW, 0xFF94A3B8, false);
 
         if (fuelPercent >= 0.0f) {
             String fuelBadge = "Tank " + Math.round(fuelPercent) + "%";
             int fuelColor = fuelPercent < 15.0f ? 0xFFEF4444 : (fuelPercent < 35.0f ? 0xFFF59E0B : 0xFF38BDF8);
-            graphics.pose().pushMatrix();
-            graphics.pose().translate(10.0f + digitsWidth, 36.0f);
-            graphics.pose().scale(0.70f, 0.70f);
-            graphics.text(font, fuelBadge, 0, 0, fuelColor, false);
-            graphics.pose().popMatrix();
+            GMSettingsScreen.drawFittedText(graphics, font, uText(fuelBadge), unitX, 32, maxUnitW, fuelColor, false);
         }
 
-        // Tempomat status box on the right
-        int boxX = 76;
-        int boxY = 16;
+        // Tempomat rounded status pill on the right
+        int boxX = 74;
+        int boxY = 19;
         int boxW = width - boxX - 5;
-        int boxH = 22;
-        int boxBorder = (!tempomatAvailable || !tempomatOn) ? 0xFF334155 : 0xFF10B981;
-        graphics.fill(boxX, boxY, boxX + boxW, boxY + boxH, 0xFF0F172A);
-        graphics.outline(boxX, boxY, boxW, boxH, boxBorder);
+        int boxH = 26;
+        Identifier boxTex = (!tempomatAvailable || !tempomatOn) ? GMSettingsScreen.TEX_CONTAINER_BG : GMSettingsScreen.TEX_HUD_ALERT_GREEN;
+        GMSettingsScreen.drawNineSlice(graphics, boxTex, boxX, boxY, boxW, boxH, 6);
 
         String statusHeader;
         if (!tempomatAvailable) {
@@ -631,47 +626,39 @@ public class HudOverlayRenderer {
         } else {
             statusHeader = I18n.get("gm-addon.hud.tacho.card_cruise_off");
         }
+        int headerColor = !tempomatAvailable ? 0xFF64748B : (tempomatOn ? 0xFF34D399 : 0xFFCBD5E1);
+        GMSettingsScreen.drawCenteredFittedText(graphics, font, uText(statusHeader), boxX + boxW / 2, boxY + 4, boxW - 8, headerColor, true);
 
-        int rawHeaderW = font.width(statusHeader);
-        float headerScale = Math.min(0.70f, (float) (boxW - 4) / Math.max(1, rawHeaderW));
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(boxX + boxW / 2.0f, boxY + 3.0f);
-        graphics.pose().scale(headerScale, headerScale);
-        graphics.centeredText(font, statusHeader, 0, 0, 0xFFF8FAFC);
-        graphics.pose().popMatrix();
+        String tVal = !tempomatAvailable ? "N/A" : (tempomatKmh + " km/h");
+        int tValColor = !tempomatAvailable ? 0xFF64748B : (tempomatOn ? 0xFFFFFFFF : 0xFF94A3B8);
+        GMSettingsScreen.drawCenteredFittedText(graphics, font, uText(tVal), boxX + boxW / 2, boxY + 14, boxW - 8, tValColor, true);
 
-        String tVal = !tempomatAvailable ? "§8N/A" : (tempomatKmh + " km/h");
-        int tValColor = !tempomatAvailable ? 0xFF64748B : (tempomatOn ? 0xFF10B981 : 0xFF94A3B8);
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(boxX + boxW / 2.0f, boxY + 12.0f);
-        graphics.pose().scale(0.85f, 0.85f);
-        graphics.centeredText(font, tVal, 0, 0, tValColor);
-        graphics.pose().popMatrix();
-
-        // Bottom LED speed progress bar + Tempomat target notch
+        // Smooth rounded speed progress bar at the bottom
         int barX = 6;
         int barY = height - 11;
         int barW = width - 12;
         int barH = 6;
-        graphics.fill(barX, barY, barX + barW, barY + barH, 0xFF1E293B);
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_SLIDER_TRACK, barX, barY, barW, barH, 3);
 
         float fillRatio = (float) Math.clamp(speedKmh / maxKmh, 0.0, 1.0);
         int fillW = Math.round(barW * fillRatio);
-        if (fillW > 0) {
-            graphics.fill(barX, barY, barX + fillW, barY + barH, accentColor);
+        if (fillW > 2) {
+            Identifier barFillTex = overLimit
+                ? GMSettingsScreen.TEX_BAR_FILL_RED
+                : ((tempomatOn && tempomatAvailable) ? GMSettingsScreen.TEX_BAR_FILL_GREEN : GMSettingsScreen.TEX_SLIDER_FILL);
+            GMSettingsScreen.drawNineSlice(graphics, barFillTex, barX, barY, Math.max(8, fillW), barH, 3);
         }
 
-        // Draw Tempomat target marker line on the progress bar
+        // Tempomat target indicator dot on progress bar
         if (tempomatAvailable && tempomatKmh > 0) {
             float tRatio = (float) Math.clamp((double) tempomatKmh / maxKmh, 0.0, 1.0);
             int tx = barX + Math.round(barW * tRatio);
-            int markerColor = tempomatOn ? 0xFF10B981 : 0xFF94A3B8;
-            graphics.fill(tx - 1, barY - 2, tx + 1, barY + barH + 2, markerColor);
+            GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SWITCH_KNOB, tx - 4, barY - 1, 8, 8);
         }
     }
 
     /**
-     * Projects nearby Speed Cameras in 3D world space onto the HUD viewport.
+     * Projects nearby Speed Cameras in 3D world space onto the HUD viewport in Modern Ultra-HD style.
      */
     public void render3dWorldBlitzerMarkers(GuiGraphicsExtractor graphics, Minecraft mc, float partialTick) {
         LocalPlayer player = mc.player;
@@ -732,13 +719,17 @@ public class HudOverlayRenderer {
             int sx = (int) Math.round((guiW * 0.5) * (1.0 + ndcX));
             int sy = (int) Math.round((guiH * 0.5) * (1.0 - ndcY));
 
-            String badge = String.format(Locale.ROOT, "[%d] %s (%dm)", cam.effectiveSpeedLimit(), cam.name(), (int) Math.round(dist));
-            int bw = font.width(badge) + 8;
+            Component badgeComp = uText(String.format(Locale.ROOT, "%d km/h • %s (%dm)", cam.effectiveSpeedLimit(), cam.name(), (int) Math.round(dist)));
+            int textW = font.width(badgeComp);
+            int bw = textW + 26;
+            int bh = 18;
+            int bx = sx - bw / 2;
+            int by = sy - 9;
 
-            graphics.verticalLine(sx, sy + 6, sy + 18, 0xAAEF4444);
-            graphics.fill(sx - bw / 2, sy - 6, sx + bw / 2, sy + 6, 0xCC0F172A);
-            graphics.outline(sx - bw / 2, sy - 6, bw, 12, 0xFFEF4444);
-            graphics.centeredText(font, badge, sx, sy - 4, 0xFFF8FAFC);
+            graphics.verticalLine(sx, by + bh, by + bh + 10, 0xCCEF4444);
+            GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_HUD_ALERT_RED, bx, by, bw, bh, 6);
+            GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SPEED_SIGN, bx + 4, by + 3, 12, 12);
+            graphics.text(font, badgeComp, bx + 20, by + 5, 0xFFFFFFFF, true);
         }
     }
 }

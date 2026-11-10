@@ -189,4 +189,14 @@ public class DebugModule implements ClientFeatureModule {
             )
         );
     }
+
+    @Override
+    public void resetDefaults(GMAddonClient addon) {
+        AddonConfig cfg = addon.getConfig();
+        cfg.forceEnableEverywhere = false;
+        cfg.serverDomainPattern = "(?:.*\\.)?germanminer\\.de";
+        cfg.speedCalibrationFactor = 2.70;
+        cfg.blitzerDedupeRadiusBlocks = 28.0;
+        cfg.tileCacheTtlMinutes = 30;
+    }
 }

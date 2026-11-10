@@ -203,4 +203,14 @@ public class SpawnProtectionModule implements ClientFeatureModule {
             )
         );
     }
+
+    @Override
+    public void resetDefaults(GMAddonClient addon) {
+        AddonConfig cfg = addon.getConfig();
+        cfg.spawnProtectionWidgetEnabled = true;
+        cfg.spawnProtectionSeconds = 20;
+        cfg.triggerSpawnProtectionOnJoin = true;
+        cfg.triggerSpawnProtectionOnRespawn = true;
+        cfg.spawnProtectionScale = 1.0f;
+    }
 }

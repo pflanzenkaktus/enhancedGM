@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-11-10
+
+### Added
+- **Minimap & Map Customization**:
+  - **Player Marker Customization**:
+    - Selectable marker shape: choose between a directional Chevron Arrow (`Pfeil`) or a high-visibility GPS Dot (`Punkt`).
+    - Dedicated marker size slider ranging from 20% to 200% (0.20x to 2.00x) for custom player cursor scaling on the map.
+  - **Minimap Footer & Metric Toggles**:
+    - Full coordinate display including Y-elevation (`X, Y, Z`).
+    - Configurable toggle to show or hide coordinates.
+    - Configurable toggle to show or hide current speed (`km/h`) and `[M]` map hotkey hints.
+    - Responsive dynamic footer height: collapses cleanly to a single-line bar when only coordinates are enabled, and completely hides the footer when both toggles are disabled.
+  - **Clean Single-Frame Viewport**:
+    - Removed nested borders for a seamless borderless map view.
+- **Vehicle Automatic Gear Shift (Gang D)**:
+  - Automatically shifts into drive (`Gang: D`) upon entering a vehicle once the BossBar displays transmission information (`Gang:`).
+  - Supported on both motorized vehicles (following engine startup) and non-motorized vehicles (such as bicycles).
+  - Automatically selects the gear lever comparator (`Gangwahlhebel`) in the hotbar, drops one item (Key Q) to trigger the shift, and immediately restores the previously selected hotbar slot.
+  - Prevents redundant drops when the vehicle is already in `Gang: D`.
+  - Configurable toggle in the settings menu under *Speedometer & Cruise Control* (`Automatischer Gang D (Gangwahlhebel)`).
+- **Modern UI & HUD Redesign**:
+  - Unified visual redesign across all addon screens, HUD overlays, dialogs, and editors:
+    - `GMSettingsScreen`: Rounded dark slate surfaces, animated pill switches, integrated search bar, and category sidebar.
+    - `FullscreenMapScreen`: Redesigned top and bottom toolbars, high-resolution speed camera signs, directional player marker, and toggleable filter buttons.
+    - `HudEditorScreen`: Snapping guide lines, center axes, margin boundaries, and widget status indicators.
+    - `PlotOverviewScreen`: Sortable table cards, property icons, and deadline status indicators.
+    - Setup dialogs (`CommunitySyncPromptScreen`, `PlotScanPromptScreen`, `UpdateConsentPromptScreen`): Consistent modal dialog layouts.
+  - **Font Rendering & Anti-Aliasing**:
+    - Integrated TrueType sans-serif font (`modern.ttf`, Calibri Bold) with hardware linear texture filtering (`FilterMode.LINEAR`) for smooth, readable text.
+  - **Dynamic Layout & Label Scaling**:
+    - Automatic text fitting scales label text to container bounds, preventing text clipping across different GUI scales.
+    - Restructured slider controls featuring a 5px track, position indicator, and separate value label.
+  - **Design System Documentation**:
+    - Added UI architecture and styling reference in `DESIGN_LANGUAGE.md`.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added

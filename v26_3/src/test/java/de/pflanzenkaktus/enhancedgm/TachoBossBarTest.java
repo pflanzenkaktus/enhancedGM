@@ -48,4 +48,33 @@ class TachoBossBarTest {
         assertFalse(TachoModule.isMotorStartingOrRunningText(null));
         assertFalse(TachoModule.isMotorStartingOrRunningText(""));
     }
+
+    @Test
+    void testGearDTextDetection() {
+        assertTrue(TachoModule.isGearDText("54 km/h | Gang: D"));
+        assertTrue(TachoModule.isGearDText("§eGang: D §7| §f30 km/h"));
+        assertTrue(TachoModule.isGearDText("Gang:D"));
+        assertTrue(TachoModule.isGearDText("Gang D"));
+
+        assertFalse(TachoModule.isGearDText("Gang: R | 12 km/h"));
+        assertFalse(TachoModule.isGearDText("Gang: N"));
+        assertFalse(TachoModule.isGearDText("Gang: P"));
+        assertFalse(TachoModule.isGearDText("Motor ausgeschaltet"));
+        assertFalse(TachoModule.isGearDText(null));
+        assertFalse(TachoModule.isGearDText(""));
+    }
+
+    @Test
+    void testBossBarGearTextDetection() {
+        assertTrue(TachoModule.isBossBarGearText("Gang: P | 0 km/h"));
+        assertTrue(TachoModule.isBossBarGearText("Gang: 1 | 20 km/h"));
+        assertTrue(TachoModule.isBossBarGearText("§eGang: N"));
+        assertTrue(TachoModule.isBossBarGearText("54 km/h | Gang: D"));
+
+        assertFalse(TachoModule.isBossBarGearText("Motor ausgeschaltet"));
+        assertFalse(TachoModule.isBossBarGearText("Motor startet..."));
+        assertFalse(TachoModule.isBossBarGearText("Tank: 80%"));
+        assertFalse(TachoModule.isBossBarGearText(null));
+        assertFalse(TachoModule.isBossBarGearText(""));
+    }
 }

@@ -32,7 +32,7 @@ Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1
 
 1. **BlueMap Minimap & Interactive Fullscreen Map (`MinimapModule`)**:
    - Streams and caches live map tiles (`500×500` block low-res tiles) and POI markers (`Tankstellen`, `Taxipunkte`, `Haltestellen`) directly from `http://map.germanminer.de:2086/`.
-   - **Rotating or North-Locked Minimap** with live coordinates, speed (`km/h`), cardinal compass, POI markers, and flashing Speed Camera icons.
+   - **Rotating or North-Locked Minimap** with configurable footer bar (toggles for coordinates with Y-elevation, speed `km/h`, and `[M]` keybind hint), customizable player marker shape (Chevron Arrow or GPS Dot) and scale (20%–200%), cardinal compass, POI markers, and flashing Speed Camera icons.
    - **Fullscreen Map (`M`)** with smooth drag-to-pan, scroll-to-zoom (`LOD 1` & `LOD 2`), follow-player tracking, marker category toggles (speed cameras, gas stations, taxi points, transit stops), and hover tooltips.
 
 2. **Speed Camera ("Blitzer") Warning & Firebase Cloud Database (`BlitzerModule`)**:
@@ -64,7 +64,7 @@ Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1
 
 6. **Magnetic HUD Layout Editor (`HudEditorScreen`) & Modular Settings (`GMSettingsScreen`)**:
    - **In-Game HUD Editor (`H`)**: Freely reposition all HUD widgets with smart magnetic snapping to screen edges, screen center axes, and neighboring widgets (hold `Shift` for free movement). Right-click any widget to toggle it ON/OFF, and use the scroll wheel to resize scale from 50% to 250% in clean 5% increments.
-   - **Modular Settings (`O`) & Mod Menu**: In-game configuration screen featuring categorical tabs, interactive sliders, toggle switches, and a dedicated **Debug & Erweitert** menu for simulation and developer actions.
+   - **Modular Settings (`O`) & Mod Menu**: Modernized in-game configuration screen featuring symbol-enhanced category pills, header banner with instant defaults reset, interactive sliders, high-contrast toggle switches, and a dedicated **Debug & Erweitert** menu for simulation and developer actions.
    - **Privacy-First Community Cloud Sync**: Opt-in prompt on first startup (`CommunitySyncPromptScreen`) giving you complete control over whether speed camera positions sync with Firebase.
    - **Full Bilingual Localization**: Complete German (`de_de`) and English (`en_us`) language support with automatic client detection or in-game override.
 
@@ -127,7 +127,7 @@ gm-addon/
 ```bash
 ./gradlew test build
 ```
-The compiled mod JAR will be located at `v26_3/build/libs/enhancedGM-0.3.0.jar`.
+The compiled mod JAR will be located at `v26_3/build/libs/enhancedGM-0.4.0.jar`.
 
 ### 2. Install to Minecraft Fabric Profile
 Copy the generated JAR from `v26_3/build/libs/` into your Minecraft profile's `mods/` directory.

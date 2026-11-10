@@ -310,4 +310,41 @@ public final class VersionCompat {
             return net.minecraft.network.chat.Component.literal(text + " (" + url + ")");
         }
     }
+
+    /**
+     * Drops the currently held item (1 item from stack) in both 26.1.2 and 26.3+.
+     * In 26.3+: mc.gameMode.dropItem(mc.player, false)
+     * In 26.1.2: mc.player.drop(false)
+     */
+    public static boolean dropSelectedItem(Minecraft mc) {
+        if (mc == null || mc.player == null) return false;
+        try {
+            // Try 26.3+: mc.gameMode.dropItem(LocalPlayer, boolean)
+            if (mc.gameMode != null) {
+                try {
+                    Method m = mc.gameMode.getClass().getMethod("dropItem", mc.player.getClass(), boolean.class);
+                    m.invoke(mc.gameMode, mc.player, false);
+                    return true;
+                } catch (NoSuchMethodException ignored) {}
+            }
+
+            // Try 26.1.2: mc.player.drop(boolean)
+            try {
+                Method m = mc.player.getClass().getMethod("drop", boolean.class);
+                Object res = m.invoke(mc.player, false);
+                return res instanceof Boolean b ? b : true;
+            } catch (NoSuchMethodException ignored) {}
+
+            // Fallback via reflection search
+            if (mc.gameMode != null) {
+                for (Method m : mc.gameMode.getClass().getMethods()) {
+                    if (m.getName().equals("dropItem") && m.getParameterCount() == 2) {
+                        m.invoke(mc.gameMode, mc.player, false);
+                        return true;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
 }

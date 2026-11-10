@@ -58,6 +58,10 @@ public class TachoModule implements ClientFeatureModule {
     private volatile long lastVehicleBossBarTimestampMs = 0L;
     private boolean hasAttemptedMotorStart = false;
     private int pendingMotorStartTicks = -1;
+    private boolean hasShiftedGearD = false;
+    private int pendingGearShiftTicks = -1;
+    private boolean isCurrentGearD = false;
+    private boolean bossBarHasGear = false;
 
     public TachoModule(GMAddonClient addon) {
         this.addon = addon;
@@ -248,6 +252,44 @@ public class TachoModule implements ClientFeatureModule {
         return clean.contains("motor startet") || clean.contains("km/h");
     }
 
+    public static boolean isBossBarGearText(String text) {
+        if (text == null || text.isBlank()) return false;
+        String clean = COLOR_STRIP_PATTERN.matcher(text).replaceAll("").toLowerCase(java.util.Locale.ROOT).trim();
+        return clean.contains("gang");
+    }
+
+    public static boolean isGearDText(String text) {
+        if (text == null || text.isBlank()) return false;
+        String clean = COLOR_STRIP_PATTERN.matcher(text).replaceAll("").toUpperCase(java.util.Locale.ROOT).trim();
+        return clean.contains("GANG: D") || clean.contains("GANG:D") || clean.contains("GANG D")
+            || clean.matches(".*\\bGANG\\s*[:\\-]?\\s*D\\b.*");
+    }
+
+    public static boolean isGearShifterItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        String text = extractItemText(stack).toLowerCase(Locale.ROOT);
+        return text.contains("gangwahlhebel")
+            || text.contains("ganghebel")
+            || text.contains("gangschaltung")
+            || (text.contains("comparator") && (text.contains("gang") || text.contains("getriebe") || text.contains("drive") || text.contains("vorwärts")));
+    }
+
+    public boolean isCurrentGearD() {
+        return isCurrentGearD;
+    }
+
+    public void setCurrentGearD(boolean gearD) {
+        this.isCurrentGearD = gearD;
+    }
+
+    public boolean hasShiftedGearD() {
+        return hasShiftedGearD;
+    }
+
+    public void setShiftedGearD(boolean shifted) {
+        this.hasShiftedGearD = shifted;
+    }
+
     public boolean hasAttemptedMotorStart() {
         return hasAttemptedMotorStart;
     }
@@ -317,11 +359,19 @@ public class TachoModule implements ClientFeatureModule {
     @Override
     public void onChatMessage(GMAddonClient addon, String plainMessage) {
         addon.getBlitzerTracker().onChatMessageForTempomat(plainMessage);
+        if (plainMessage != null && isGearDText(plainMessage)) {
+            isCurrentGearD = true;
+            hasShiftedGearD = true;
+        }
     }
 
     @Override
     public void onActionBarMessage(GMAddonClient addon, String plainMessage) {
         addon.getBlitzerTracker().onActionBarMessage(plainMessage);
+        if (plainMessage != null && isGearDText(plainMessage)) {
+            isCurrentGearD = true;
+            hasShiftedGearD = true;
+        }
     }
 
     @Override
@@ -331,9 +381,10 @@ public class TachoModule implements ClientFeatureModule {
         }
         inspectBossBarsForTempomat(addon, client);
 
-        // Tick automatic engine start countdown while seated in a vehicle
+        // Tick automatic engine start & gear D shift countdown while seated in a vehicle
         if (client.player.getVehicle() != null) {
-            if (isNonMotorVehicleEntity(client)) {
+            boolean nonMotor = isNonMotorVehicleEntity(client);
+            if (nonMotor) {
                 hasAttemptedMotorStart = true;
                 pendingMotorStartTicks = -1;
             } else if (pendingMotorStartTicks > 0) {
@@ -349,9 +400,34 @@ public class TachoModule implements ClientFeatureModule {
                     }
                 }
             }
+
+            // Automatic Gear D Shift: Only allowed once the BossBar shows gear information ("Gang") and not already in Gang D
+            if (addon.getConfig().autoGearD && !hasShiftedGearD && !isCurrentGearD) {
+                boolean motorReady = nonMotor || hasAttemptedMotorStart;
+                if (motorReady && bossBarHasGear) {
+                    if (pendingGearShiftTicks < 0) {
+                        // Delay 3 ticks (~150ms) once gear info is on the BossBar so the server has placed the gear shifter comparator in hotbar
+                        pendingGearShiftTicks = 3;
+                    } else if (pendingGearShiftTicks > 0) {
+                        pendingGearShiftTicks--;
+                    } else if (pendingGearShiftTicks == 0) {
+                        if (tryShiftToGearD(client)) {
+                            hasShiftedGearD = true;
+                            pendingGearShiftTicks = -1;
+                        } else {
+                            // If comparator item not found in hotbar yet, retry in 3 ticks
+                            pendingGearShiftTicks = 3;
+                        }
+                    }
+                }
+            }
         } else {
             hasAttemptedMotorStart = false;
             pendingMotorStartTicks = -1;
+            hasShiftedGearD = false;
+            pendingGearShiftTicks = -1;
+            isCurrentGearD = false;
+            bossBarHasGear = false;
         }
 
         boolean inVehicle = GMAddonClient.isPlayerInActualVehicle(client.player);
@@ -370,6 +446,58 @@ public class TachoModule implements ClientFeatureModule {
         // Always inspect open server container menus (e.g. /vehicles menu) to stay 100% in sync
         if (de.pflanzenkaktus.enhancedgm.client.compat.VersionCompat.getScreen(client) instanceof AbstractContainerScreen<?> containerScreen) {
             inspectContainerScreenForTempomat(addon, containerScreen);
+        }
+    }
+
+    /**
+     * Shifts to gear D by temporarily selecting the gear shifter comparator in the hotbar
+     * and dropping it (Q / keyDrop), then restoring the original selected hotbar slot.
+     */
+    private boolean tryShiftToGearD(Minecraft client) {
+        if (client == null || client.player == null) return false;
+        if (isCurrentGearD) return true;
+
+        var inv = client.player.getInventory();
+        int shifterSlot = -1;
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (isGearShifterItem(stack)) {
+                shifterSlot = i;
+                break;
+            }
+        }
+
+        if (shifterSlot == -1) {
+            return false;
+        }
+
+        int prevSlot = inv.getSelectedSlot();
+        try {
+            if (prevSlot != shifterSlot) {
+                inv.setSelectedSlot(shifterSlot);
+                if (client.player.connection != null) {
+                    client.player.connection.send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(shifterSlot));
+                }
+            }
+
+            // Drop 1 comparator to shift gear to D
+            boolean dropped = de.pflanzenkaktus.enhancedgm.client.compat.VersionCompat.dropSelectedItem(client);
+            LOGGER.info("Dropped gear shifter comparator (slot {}, dropped={}) to enter Gang D", shifterSlot, dropped);
+
+            // Restore original slot
+            if (prevSlot != shifterSlot) {
+                inv.setSelectedSlot(prevSlot);
+                if (client.player.connection != null) {
+                    client.player.connection.send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(prevSlot));
+                }
+            }
+            return true;
+        } catch (Throwable t) {
+            LOGGER.warn("Failed to shift to Gang D", t);
+            if (inv.getSelectedSlot() != prevSlot) {
+                inv.setSelectedSlot(prevSlot);
+            }
+            return false;
         }
     }
 
@@ -687,6 +815,15 @@ public class TachoModule implements ClientFeatureModule {
                                     pendingMotorStartTicks = -1;
                                     hasAttemptedMotorStart = true;
                                 }
+
+                                if (isBossBarGearText(text)) {
+                                    bossBarHasGear = true;
+                                }
+
+                                if (isGearDText(text)) {
+                                    isCurrentGearD = true;
+                                    hasShiftedGearD = true;
+                                }
                                 float progress = event.getProgress();
                                 if (!text.equals(lastLoggedBossBar)) {
                                     lastLoggedBossBar = text;
@@ -764,6 +901,16 @@ public class TachoModule implements ClientFeatureModule {
                     addon.saveConfig();
                 }
             ),
+            new Setting.BooleanSetting(
+                "auto_gear_d",
+                I18n.get("gm-addon.setting.tacho.auto_gear_d"),
+                I18n.get("gm-addon.setting.tacho.auto_gear_d.desc"),
+                () -> cfg.autoGearD,
+                val -> {
+                    cfg.autoGearD = val;
+                    addon.saveConfig();
+                }
+            ),
             new Setting.IntSliderSetting(
                 "tacho_max_kmh",
                 I18n.get("gm-addon.setting.tacho.max_kmh"),
@@ -787,5 +934,16 @@ public class TachoModule implements ClientFeatureModule {
                 }
             )
         );
+    }
+
+    @Override
+    public void resetDefaults(GMAddonClient addon) {
+        AddonConfig cfg = addon.getConfig();
+        cfg.tachoEnabled = true;
+        cfg.tachoStyle = "ANALOG";
+        cfg.tachoOnlyInVehicle = true;
+        cfg.autoMotorStart = true;
+        cfg.tachoMaxKmh = 160;
+        cfg.tachoScale = 1.0f;
     }
 }

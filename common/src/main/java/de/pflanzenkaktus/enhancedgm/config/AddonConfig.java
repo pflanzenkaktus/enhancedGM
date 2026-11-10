@@ -36,6 +36,10 @@ public class AddonConfig {
     public float minimapScale = 1.0f;
     public boolean minimapRotateWithPlayer = true;
     public double minimapZoomBlocks = 160.0; // Visible diameter in blocks
+    public boolean minimapShowCoordinates = true;
+    public boolean minimapShowSpeedAndHints = true;
+    public String minimapPlayerMarkerShape = "ARROW"; // "ARROW" or "DOT"
+    public float minimapPlayerMarkerScale = 1.0f; // 0.2f - 2.0f
     public boolean showSpeedCamerasOnMap = true;
     public boolean showBlueMapMarkersOnMap = true;
     public List<String> enabledMarkerSets = new ArrayList<>(Arrays.asList(
@@ -102,6 +106,7 @@ public class AddonConfig {
     public boolean tachoEnabled = true;
     public boolean tachoOnlyInVehicle = true;
     public boolean autoMotorStart = true;
+    public boolean autoGearD = true;
     public String tachoStyle = "ANALOG"; // "ANALOG" or "DIGITAL"
     public int tachoX = 200;
     public int tachoY = 180;
@@ -151,6 +156,12 @@ public class AddonConfig {
                     }
                     if (loaded.plotWidgetScale <= 0.1f) {
                         loaded.plotWidgetScale = 1.0f;
+                    }
+                    if (loaded.minimapPlayerMarkerShape == null || loaded.minimapPlayerMarkerShape.isBlank()) {
+                        loaded.minimapPlayerMarkerShape = "ARROW";
+                    }
+                    if (loaded.minimapPlayerMarkerScale <= 0.05f) {
+                        loaded.minimapPlayerMarkerScale = 1.0f;
                     }
                     // Validate and clamp critical configuration values
                     loaded.minimapZoomBlocks = Math.clamp(loaded.minimapZoomBlocks, 25.0, 1500.0);

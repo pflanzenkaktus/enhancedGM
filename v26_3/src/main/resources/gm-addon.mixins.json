@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "de.pflanzenkaktus.enhancedgm.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "GlyphRenderStateMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

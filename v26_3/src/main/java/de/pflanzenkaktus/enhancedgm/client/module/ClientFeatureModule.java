@@ -24,6 +24,8 @@ public interface ClientFeatureModule {
 
     List<Setting<?>> getSettings();
 
+    default void resetDefaults(GMAddonClient addon) {}
+
     default Optional<HudWidgetDescriptor> getHudWidget() {
         return Optional.empty();
     }

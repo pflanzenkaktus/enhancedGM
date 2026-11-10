@@ -325,4 +325,16 @@ public class BlitzerModule implements ClientFeatureModule {
             )
         );
     }
+
+    @Override
+    public void resetDefaults(GMAddonClient addon) {
+        AddonConfig cfg = addon.getConfig();
+        cfg.blitzerWidgetEnabled = true;
+        cfg.blitzerOnlyInVehicle = true;
+        cfg.blitzerAutoAddOnFlash = true;
+        cfg.warningDistanceBlocks = 110.0;
+        cfg.urgentDistanceBlocks = 45.0;
+        cfg.directionConeDegrees = 75.0;
+        cfg.blitzerWidgetScale = 1.0f;
+    }
 }

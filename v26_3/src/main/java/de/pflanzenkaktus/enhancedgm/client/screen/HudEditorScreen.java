@@ -55,40 +55,52 @@ public class HudEditorScreen extends Screen {
     protected void init() {
         int panelY = this.height - BOTTOM_BAR_HEIGHT;
         int btnY = panelY + 9;
-        int x = 8;
+        int x = 10;
 
         // 1. Open Full Modular Settings Screen
-        addRenderableWidget(Button.builder(
-            I18n.component("gm-addon.screen.hud.module_settings"),
-            btn -> de.pflanzenkaktus.enhancedgm.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), new GMSettingsScreen(addon, this))
-        ).bounds(x, btnY, 132, 20).build());
+        addRenderableWidget(new GMSettingsScreen.ModernGlassButton(
+            x, btnY, 132, 20,
+            GMSettingsScreen.uText(I18n.get("gm-addon.screen.hud.module_settings")),
+            GMSettingsScreen.getCategoryIcon("general"),
+            btn -> de.pflanzenkaktus.enhancedgm.client.compat.VersionCompat.setScreen(Minecraft.getInstance(), new GMSettingsScreen(addon, this)),
+            false
+        ));
         x += 136;
 
         // 2. Toggle Magnetic Snapping
-        addRenderableWidget(Button.builder(
+        addRenderableWidget(new GMSettingsScreen.ModernGlassButton(
+            x, btnY, 122, 20,
             getSnapButtonText(),
             btn -> {
                 snappingEnabled = !snappingEnabled;
                 btn.setMessage(getSnapButtonText());
-            }
-        ).bounds(x, btnY, 118, 20).build());
-        x += 122;
+                ((GMSettingsScreen.ModernGlassButton) btn).setAccent(snappingEnabled);
+            },
+            snappingEnabled
+        ));
+        x += 126;
 
         // 3. Reset all widget positions
-        addRenderableWidget(Button.builder(
-            I18n.component("gm-addon.screen.hud.reset_positions"),
-            btn -> addon.getModuleManager().resetAllHudPositions()
-        ).bounds(x, btnY, 112, 20).build());
+        addRenderableWidget(new GMSettingsScreen.ModernGlassButton(
+            x, btnY, 116, 20,
+            GMSettingsScreen.uText(I18n.get("gm-addon.screen.hud.reset_positions")),
+            GMSettingsScreen.ICON_RESET,
+            btn -> addon.getModuleManager().resetAllHudPositions(),
+            false
+        ));
 
         // 4. Save & Close
-        addRenderableWidget(Button.builder(
-            I18n.component("gm-addon.common.save_and_done"),
-            btn -> onClose()
-        ).bounds(this.width - 122, btnY, 114, 20).build());
+        addRenderableWidget(new GMSettingsScreen.ModernGlassButton(
+            this.width - 124, btnY, 114, 20,
+            GMSettingsScreen.uText(I18n.get("gm-addon.common.save_and_done")),
+            btn -> onClose(),
+            true
+        ));
     }
 
     private Component getSnapButtonText() {
-        return Component.literal(snappingEnabled ? I18n.get("gm-addon.screen.hud.magnetic_snap_on") : I18n.get("gm-addon.screen.hud.magnetic_snap_off"));
+        String raw = snappingEnabled ? I18n.get("gm-addon.screen.hud.magnetic_snap_on") : I18n.get("gm-addon.screen.hud.magnetic_snap_off");
+        return GMSettingsScreen.uText(raw.replaceAll("\u00a7[0-9a-fk-or]", ""));
     }
 
     @Override
@@ -117,26 +129,25 @@ public class HudEditorScreen extends Screen {
         for (SnapGuideLine guide : activeGuides) {
             if (guide.vertical()) {
                 graphics.verticalLine(guide.position(), guide.start(), guide.end(), guide.color());
-                // Glow/accent dots at ends
                 graphics.fill(guide.position() - 2, guide.start(), guide.position() + 3, guide.start() + 3, guide.color());
                 graphics.fill(guide.position() - 2, guide.end() - 3, guide.position() + 3, guide.end(), guide.color());
                 if (guide.label() != null && !guide.label().isEmpty()) {
-                    int lw = this.font.width(guide.label()) + 6;
+                    Component lbl = GMSettingsScreen.uText(guide.label());
+                    int lw = this.font.width(lbl) + 10;
                     int lx = Math.clamp(guide.position() - lw / 2, 4, this.width - lw - 4);
-                    graphics.fill(lx, 6, lx + lw, 17, 0xE60F172A);
-                    graphics.outline(lx, 6, lw, 11, guide.color());
-                    graphics.text(this.font, guide.label(), lx + 3, 8, guide.color(), false);
+                    GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_CONTAINER_BG, lx, 6, lw, 14, 5);
+                    graphics.text(this.font, lbl, lx + 5, 9, guide.color(), true);
                 }
             } else {
                 graphics.horizontalLine(guide.start(), guide.end(), guide.position(), guide.color());
                 graphics.fill(guide.start(), guide.position() - 2, guide.start() + 3, guide.position() + 3, guide.color());
                 graphics.fill(guide.end() - 3, guide.position() - 2, guide.end(), guide.position() + 3, guide.color());
                 if (guide.label() != null && !guide.label().isEmpty()) {
-                    int lw = this.font.width(guide.label()) + 6;
-                    int ly = Math.clamp(guide.position() - 5, 4, this.height - BOTTOM_BAR_HEIGHT - 14);
-                    graphics.fill(6, ly, 6 + lw, ly + 11, 0xE60F172A);
-                    graphics.outline(6, ly, lw, 11, guide.color());
-                    graphics.text(this.font, guide.label(), 9, ly + 2, guide.color(), false);
+                    Component lbl = GMSettingsScreen.uText(guide.label());
+                    int lw = this.font.width(lbl) + 10;
+                    int ly = Math.clamp(guide.position() - 7, 4, this.height - BOTTOM_BAR_HEIGHT - 16);
+                    GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_CONTAINER_BG, 6, ly, lw, 14, 5);
+                    graphics.text(this.font, lbl, 11, ly + 3, guide.color(), true);
                 }
             }
         }
@@ -146,43 +157,40 @@ public class HudEditorScreen extends Screen {
             boolean isDragging = (activeDragWidget == widget);
             boolean isHovered = widget.isPointInside(mouseX, mouseY);
             boolean isSnapped = isDragging && !activeGuides.isEmpty();
-            int borderColor = isSnapped ? 0xFFF43F5E : (isDragging ? 0xFF38BDF8 : (isHovered ? 0xFFFACC15 : 0xAA94A3B8));
+            int borderColor = isSnapped ? 0xFFF43F5E : (isDragging ? 0xFF38BDF8 : (isHovered ? 0xFFFACC15 : 0x6694A3B8));
 
             int wx = widget.getX();
             int wy = widget.getY();
             int ww = widget.getScaledWidth();
             int wh = widget.getScaledHeight();
 
-            graphics.outline(wx, wy, ww, wh, borderColor);
-
-            // Corner handles on hovered or dragged widget
             if (isDragging || isHovered) {
-                graphics.fill(wx - 1, wy - 1, wx + 2, wy + 2, borderColor);
-                graphics.fill(wx + ww - 2, wy - 1, wx + ww + 1, wy + 2, borderColor);
-                graphics.fill(wx - 1, wy + wh - 2, wx + 2, wy + wh + 1, borderColor);
-                graphics.fill(wx + ww - 2, wy + wh - 2, wx + ww + 1, wy + wh + 1, borderColor);
+                graphics.outline(wx - 1, wy - 1, ww + 2, wh + 2, borderColor);
+                graphics.fill(wx - 2, wy - 2, wx + 2, wy + 2, borderColor);
+                graphics.fill(wx + ww - 2, wy - 2, wx + ww + 2, wy + 2, borderColor);
+                graphics.fill(wx - 2, wy + wh - 2, wx + 2, wy + wh + 2, borderColor);
+                graphics.fill(wx + ww - 2, wy + wh - 2, wx + ww + 2, wy + wh + 2, borderColor);
             }
 
-            String tag = String.format(
+            Component tagComp = GMSettingsScreen.uText(String.format(
                 Locale.ROOT,
                 "%s (%.0f%%) %s",
                 widget.getDisplayName(),
                 widget.getScale() * 100.0f,
                 widget.isEnabled() ? "" : I18n.get("gm-addon.screen.hud.tag_off")
-            );
-            int tagW = this.font.width(tag) + 6;
-            int tagY = Math.max(2, wy - 13);
-            graphics.fill(wx, tagY, wx + tagW, tagY + 11, 0xD90F172A);
-            graphics.text(this.font, tag, wx + 3, tagY + 2, borderColor, false);
+            ).trim());
+            int tagW = this.font.width(tagComp) + 10;
+            int tagY = Math.max(2, wy - 16);
+            GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_CONTAINER_BG, wx, tagY, tagW, 14, 5);
+            graphics.text(this.font, tagComp, wx + 5, tagY + 3, isDragging || isHovered ? borderColor : 0xFFE2E8F0, true);
         }
 
-        // Bottom control bar
+        // Bottom control bar in Modern dark slate
         int panelY = this.height - BOTTOM_BAR_HEIGHT;
-        graphics.fill(0, panelY, this.width, this.height, 0xEE0F172A);
-        graphics.horizontalLine(0, this.width, panelY, 0xFF38BDF8);
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_WINDOW_BG, 4, panelY + 2, this.width - 8, BOTTOM_BAR_HEIGHT - 4, 8);
 
-        String hint = I18n.get("gm-addon.screen.hud.hint");
-        graphics.centeredText(this.font, hint, this.width / 2, panelY - 13, 0xFFE2E8F0);
+        Component hintComp = GMSettingsScreen.uText(I18n.get("gm-addon.screen.hud.hint"));
+        GMSettingsScreen.drawCenteredFittedText(graphics, this.font, hintComp, this.width / 2, panelY - 13, this.width - 20, 0xFFF1F5F9, true);
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }

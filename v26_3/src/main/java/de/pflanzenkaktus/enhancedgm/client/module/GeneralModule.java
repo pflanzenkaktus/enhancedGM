@@ -80,4 +80,11 @@ public class GeneralModule implements ClientFeatureModule {
             )
         );
     }
+
+    @Override
+    public void resetDefaults(GMAddonClient addon) {
+        AddonConfig cfg = addon.getConfig();
+        cfg.language = "AUTO";
+        cfg.checkUpdates = true;
+    }
 }

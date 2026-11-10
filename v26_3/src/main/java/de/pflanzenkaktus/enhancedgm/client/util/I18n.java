@@ -112,6 +112,19 @@ public final class I18n {
     }
 
     /**
+     * Checks if a translation key exists.
+     */
+    public static boolean has(String key) {
+        if (key == null) return false;
+        if (EN_MAP.containsKey(key) || DE_MAP.containsKey(key)) return true;
+        try {
+            return net.minecraft.locale.Language.getInstance().has(key);
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    /**
      * Resolves a Component for the given translation key.
      */
     public static Component component(String key, Object... args) {

@@ -292,4 +292,27 @@ class CoreSystemsTest {
         double speedAfterBurst = tracker.getCurrentSpeedKmh();
         assertTrue(speedAfterBurst <= 65.0, "Speed should not spike violently due to anti-spike clamp, got: " + speedAfterBurst);
     }
+
+    @Test
+    void testMinimapConfigDefaultsAndValidation(@TempDir Path tempDir) {
+        AddonConfig cfg = new AddonConfig();
+        assertTrue(cfg.minimapShowCoordinates);
+        assertTrue(cfg.minimapShowSpeedAndHints);
+        assertEquals("ARROW", cfg.minimapPlayerMarkerShape);
+        assertEquals(1.0f, cfg.minimapPlayerMarkerScale, 1e-4f);
+
+        Path configPath = tempDir.resolve("config.json");
+        cfg.minimapShowCoordinates = false;
+        cfg.minimapShowSpeedAndHints = false;
+        cfg.minimapPlayerMarkerShape = "DOT";
+        cfg.minimapPlayerMarkerScale = 0.5f;
+        cfg.save(configPath);
+
+        AddonConfig loaded = AddonConfig.load(configPath);
+        assertNotNull(loaded);
+        assertFalse(loaded.minimapShowCoordinates);
+        assertFalse(loaded.minimapShowSpeedAndHints);
+        assertEquals("DOT", loaded.minimapPlayerMarkerShape);
+        assertEquals(0.5f, loaded.minimapPlayerMarkerScale, 1e-4f);
+    }
 }

@@ -117,7 +117,11 @@ public class GMAddonClient implements ClientModInitializer {
         this.moduleManager = new ModuleManager(this);
         this.moduleManager.registerDefaultModules();
 
-        this.updateChecker = new UpdateChecker(config, "0.3.0");
+        String currentVersion = FabricLoader.getInstance().getModContainer("gm-addon")
+            .map(c -> c.getMetadata().getVersion().getFriendlyString())
+            .orElse("0.4.0");
+
+        this.updateChecker = new UpdateChecker(config, currentVersion);
         this.updateChecker.setOnUpdateFoundListener(release -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc != null) {
@@ -129,7 +133,7 @@ public class GMAddonClient implements ClientModInitializer {
             if (mc != null) {
                 mc.execute(() -> {
                     if (mc.player != null) {
-                        mc.player.sendSystemMessage(Component.translatable("gm-addon.chat.update_uptodate", "v0.3.0")
+                        mc.player.sendSystemMessage(Component.translatable("gm-addon.chat.update_uptodate", "v" + currentVersion)
                             .withStyle(ChatFormatting.GREEN));
                     }
                 });

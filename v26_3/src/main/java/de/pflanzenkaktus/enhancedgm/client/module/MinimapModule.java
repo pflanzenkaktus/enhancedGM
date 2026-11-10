@@ -75,7 +75,14 @@ public class MinimapModule implements ClientFeatureModule {
 
             @Override
             public int getBaseHeight() {
-                return addon.getConfig().minimapSize + 22;
+                AddonConfig cfg = addon.getConfig();
+                int footer = 0;
+                if (cfg.minimapShowSpeedAndHints) {
+                    footer = 22;
+                } else if (cfg.minimapShowCoordinates) {
+                    footer = 12;
+                }
+                return cfg.minimapSize + footer;
             }
 
             @Override
@@ -187,6 +194,48 @@ public class MinimapModule implements ClientFeatureModule {
                 }
             ),
             new Setting.BooleanSetting(
+                "minimap_show_coords",
+                I18n.get("gm-addon.setting.minimap.show_coordinates"),
+                I18n.get("gm-addon.setting.minimap.show_coordinates.desc"),
+                () -> cfg.minimapShowCoordinates,
+                val -> {
+                    cfg.minimapShowCoordinates = val;
+                    addon.saveConfig();
+                }
+            ),
+            new Setting.BooleanSetting(
+                "minimap_show_speed_and_hints",
+                I18n.get("gm-addon.setting.minimap.show_speed_and_hints"),
+                I18n.get("gm-addon.setting.minimap.show_speed_and_hints.desc"),
+                () -> cfg.minimapShowSpeedAndHints,
+                val -> {
+                    cfg.minimapShowSpeedAndHints = val;
+                    addon.saveConfig();
+                }
+            ),
+            new Setting.CycleSetting(
+                "minimap_marker_shape",
+                I18n.get("gm-addon.setting.minimap.marker_shape"),
+                I18n.get("gm-addon.setting.minimap.marker_shape.desc"),
+                List.of("ARROW", "DOT"),
+                () -> cfg.minimapPlayerMarkerShape != null ? cfg.minimapPlayerMarkerShape.toUpperCase() : "ARROW",
+                val -> {
+                    cfg.minimapPlayerMarkerShape = val;
+                    addon.saveConfig();
+                }
+            ),
+            new Setting.DoubleSliderSetting(
+                "minimap_marker_scale",
+                I18n.get("gm-addon.setting.minimap.marker_scale"),
+                I18n.get("gm-addon.setting.minimap.marker_scale.desc"),
+                0.2, 2.0, 0.05, "x",
+                () -> (double) cfg.minimapPlayerMarkerScale,
+                val -> {
+                    cfg.minimapPlayerMarkerScale = val.floatValue();
+                    addon.saveConfig();
+                }
+            ),
+            new Setting.BooleanSetting(
                 "show_blitzer_on_map",
                 I18n.get("gm-addon.setting.blitzer.show_on_map"),
                 I18n.get("gm-addon.setting.blitzer.show_on_map.desc"),
@@ -243,5 +292,24 @@ public class MinimapModule implements ClientFeatureModule {
             cfg.enabledMarkerSets.add(id);
         }
         addon.saveConfig();
+    }
+
+    @Override
+    public void resetDefaults(GMAddonClient addon) {
+        AddonConfig cfg = addon.getConfig();
+        cfg.minimapEnabled = true;
+        cfg.minimapRotateWithPlayer = true;
+        cfg.minimapSize = 130;
+        cfg.minimapZoomBlocks = 160.0;
+        cfg.minimapScale = 1.0f;
+        cfg.minimapShowCoordinates = true;
+        cfg.minimapShowSpeedAndHints = true;
+        cfg.minimapPlayerMarkerShape = "ARROW";
+        cfg.minimapPlayerMarkerScale = 1.0f;
+        cfg.showSpeedCamerasOnMap = true;
+        cfg.showBlueMapMarkersOnMap = true;
+        cfg.enabledMarkerSets = new java.util.ArrayList<>(java.util.Arrays.asList(
+            "Tankstellen", "Taxipunkte", "Bushaltestellen", "S-Bahnhaltestellen", "Kabelwagenhaltestellen"
+        ));
     }
 }

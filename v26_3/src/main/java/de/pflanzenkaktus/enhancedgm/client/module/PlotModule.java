@@ -440,6 +440,7 @@ public class PlotModule implements ClientFeatureModule {
         String line1;
         String line2;
         int accent = 0xFF38BDF8;
+        net.minecraft.resources.Identifier cardTex = de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.TEX_WINDOW_BG;
         boolean critical = !sorted.isEmpty() && sorted.get(0).hasBeenVisited()
             && sorted.get(0).daysRemaining(now) <= cfg.plotReminderDaysBefore;
         if (!editorPreview && !critical) {
@@ -450,13 +451,23 @@ public class PlotModule implements ClientFeatureModule {
             long days = p.daysRemaining(now);
             line1 = p.name + " (" + p.type + ")";
             line2 = days <= 0
-                ? I18n.get("gm-addon.widget.plot.expired")
+                ? I18n.get("gm-addon.widget.plot.expired").replaceAll("\u00a7[0-9a-fk-or]", "")
                 : I18n.get("gm-addon.widget.plot.days_left", days, p.deadlineDate().format(DATE_FORMAT));
-            accent = days <= 3 ? 0xFFEF4444 : (days <= cfg.plotReminderDaysBefore ? 0xFFF59E0B : 0xFF22C55E);
+            if (days <= 3) {
+                accent = 0xFFFCA5A5;
+                cardTex = de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.TEX_HUD_ALERT_RED;
+            } else if (days <= cfg.plotReminderDaysBefore) {
+                accent = 0xFFFDE047;
+                cardTex = de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.TEX_HUD_ALERT_AMBER;
+            } else {
+                accent = 0xFF34D399;
+                cardTex = de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.TEX_HUD_ALERT_GREEN;
+            }
         } else if (!sorted.isEmpty()) {
             line1 = I18n.get("gm-addon.widget.plot.unknown_title");
             line2 = I18n.get("gm-addon.widget.plot.unknown_count", sorted.size());
-            accent = 0xFFF59E0B;
+            accent = 0xFFFDE047;
+            cardTex = de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.TEX_HUD_ALERT_AMBER;
         } else if (editorPreview) {
             line1 = "kau2007 (Grundstück)";
             line2 = I18n.get("gm-addon.widget.plot.days_left", 12, "01.01.2027 12:00");
@@ -464,19 +475,29 @@ public class PlotModule implements ClientFeatureModule {
             return;
         }
 
+        int width = 240;
+        int height = 34;
+
         graphics.pose().pushMatrix();
         graphics.pose().translate((float) cfg.plotWidgetX, (float) cfg.plotWidgetY);
         graphics.pose().scale(cfg.plotWidgetScale, cfg.plotWidgetScale);
-        graphics.fill(0, 0, 240, 34, 0xD90F172A);
-        graphics.outline(0, 0, 240, 34, accent);
-        if (mc.font.width(line1) > 228) {
-            line1 = mc.font.plainSubstrByWidth(line1, 222) + "...";
-        }
-        if (mc.font.width(line2) > 228) {
-            line2 = mc.font.plainSubstrByWidth(line2, 222) + "...";
-        }
-        graphics.text(mc.font, line1, 6, 6, 0xFFF8FAFC, true);
-        graphics.text(mc.font, line2, 6, 19, accent, false);
+
+        de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.drawNineSlice(graphics, cardTex, 0, 0, width, height, 8);
+        de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.drawNineSlice(
+            graphics, de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.TEX_CONTAINER_BG, 6, 6, 22, 22, 6
+        );
+        de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.drawTexture(
+            graphics, de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.ICON_PLOT, 9, 9, 16, 16
+        );
+
+        int textX = 33;
+        int maxTextW = width - textX - 8;
+        de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.drawFittedText(
+            graphics, mc.font, de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.uText(line1), textX, 7, maxTextW, 0xFFFFFFFF, true
+        );
+        de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.drawFittedText(
+            graphics, mc.font, de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.uText(line2), textX, 18, maxTextW, accent, false
+        );
         graphics.pose().popMatrix();
     }
 
@@ -549,5 +570,16 @@ public class PlotModule implements ClientFeatureModule {
                 val -> { cfg.plotWidgetScale = val.floatValue(); addon.saveConfig(); }
             )
         );
+    }
+
+    @Override
+    public void resetDefaults(GMAddonClient addon) {
+        AddonConfig cfg = addon.getConfig();
+        cfg.plotReminderEnabled = true;
+        cfg.plotCompanyName = "";
+        cfg.plotReminderDaysBefore = 7;
+        cfg.plotReminderIntervalMinutes = 30;
+        cfg.plotWidgetEnabled = true;
+        cfg.plotWidgetScale = 1.0f;
     }
 }

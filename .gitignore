@@ -76,3 +76,10 @@ database.rules.json
 # AI Agent Instructions
 AGENTS.md
 docs/AGENTS.md
+
+# Local Development Tools
+tools/
+road_editor/
+*.roads.json
+roads.json
+

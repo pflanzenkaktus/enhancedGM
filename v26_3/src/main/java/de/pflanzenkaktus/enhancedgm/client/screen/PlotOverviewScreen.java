@@ -8,25 +8,27 @@ import de.pflanzenkaktus.enhancedgm.feature.PlotTracker;
 import de.pflanzenkaktus.enhancedgm.model.OwnedPlot;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
 /**
- * Lists all scanned plots / apartments with the date by which they have to be entered again.
+ * Lists all scanned plots / apartments with the date by which they have to be entered again,
+ * styled in Modern Ultra-HD design language.
  */
 public class PlotOverviewScreen extends Screen {
-    private static final int HEADER_HEIGHT = 36;
-    private static final int FOOTER_HEIGHT = 32;
-    private static final int ROW_HEIGHT = 30;
+    private static final int HEADER_HEIGHT = 38;
+    private static final int FOOTER_HEIGHT = 36;
+    private static final int ROW_HEIGHT = 34;
 
     private final GMAddonClient addon;
     private final Screen parentScreen;
     private double scrollOffset = 0.0;
 
     public PlotOverviewScreen(GMAddonClient addon, Screen parentScreen) {
-        super(I18n.component("gm-addon.screen.plots.title"));
+        super(GMSettingsScreen.uText(I18n.get("gm-addon.screen.plots.title")));
         this.addon = addon;
         this.parentScreen = parentScreen;
     }
@@ -43,69 +45,98 @@ public class PlotOverviewScreen extends Screen {
 
     @Override
     protected void init() {
-        addRenderableWidget(Button.builder(
-            I18n.component("gm-addon.setting.plot.scan.btn"),
+        addRenderableWidget(new GMSettingsScreen.ModernGlassButton(
+            this.width - 178, 9, 142, 20,
+            GMSettingsScreen.uText(I18n.get("gm-addon.setting.plot.scan.btn")),
+            GMSettingsScreen.ICON_RESET,
             btn -> {
                 if (addon.getModuleManager().getPlotModule() != null) {
                     addon.getModuleManager().getPlotModule().startScan();
                 }
-            }
-        ).bounds(this.width - 168, 8, 160, 20).build());
+            },
+            true
+        ));
 
-        addRenderableWidget(Button.builder(
-            I18n.component("gm-addon.common.save_and_close"),
+        addRenderableWidget(new GMSettingsScreen.CloseButton(
+            this.width - 32, 9, 22, 20,
             btn -> onClose()
-        ).bounds(this.width / 2 - 75, this.height - FOOTER_HEIGHT + 6, 150, 20).build());
+        ));
+
+        addRenderableWidget(new GMSettingsScreen.ModernGlassButton(
+            this.width / 2 - 75, this.height - FOOTER_HEIGHT + 8, 150, 20,
+            GMSettingsScreen.uText(I18n.get("gm-addon.common.save_and_close")),
+            btn -> onClose(),
+            false
+        ));
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, this.width, this.height, 0xE60B1120);
+        graphics.fill(0, 0, this.width, this.height, 0xCC090D16);
 
         List<OwnedPlot> rows = rows();
         long now = System.currentTimeMillis();
-        int topClip = HEADER_HEIGHT + 2;
-        int bottomClip = this.height - FOOTER_HEIGHT - 2;
+        int topClip = HEADER_HEIGHT + 4;
+        int bottomClip = this.height - FOOTER_HEIGHT - 4;
         int left = 12;
         int right = this.width - 12;
+        int rowW = right - left;
 
         graphics.enableScissor(0, topClip, this.width, bottomClip);
         if (rows.isEmpty()) {
-            graphics.text(this.font, I18n.get("gm-addon.screen.plots.empty"), left, topClip + 12, 0xFF94A3B8, false);
+            GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_CARD_NORMAL, left, topClip + 8, rowW, 32, 8);
+            GMSettingsScreen.drawFittedText(graphics, this.font, GMSettingsScreen.uText(I18n.get("gm-addon.screen.plots.empty")), left + 12, topClip + 20, rowW - 24, 0xFF94A3B8, false);
         }
         int y = (int) Math.round(HEADER_HEIGHT + 8 - scrollOffset);
+        Identifier plotIcon = GMSettingsScreen.getCategoryIcon("plot");
         for (OwnedPlot p : rows) {
             if (y + ROW_HEIGHT >= topClip && y <= bottomClip) {
                 long days = p.daysRemaining(now);
-                int color = !p.hasBeenVisited() ? 0xFF94A3B8
-                    : days <= 3 ? 0xFFEF4444
-                    : days <= addon.getConfig().plotReminderDaysBefore ? 0xFFF59E0B : 0xFF22C55E;
-
-                graphics.fill(left, y, right, y + ROW_HEIGHT - 4, 0x881E293B);
-                graphics.outline(left, y, right - left, ROW_HEIGHT - 4, color);
-                graphics.text(this.font, p.name + " §7(" + p.type + ")", left + 8, y + 4, 0xFFF8FAFC, true);
-                graphics.text(this.font, p.x + ", " + p.y + ", " + p.z
-                    + (p.area.isEmpty() ? "" : "  -  " + p.area), left + 8, y + 15, 0xFF94A3B8, false);
-
-                String status;
+                Identifier cardTex;
+                int statusColor;
                 if (!p.hasBeenVisited()) {
-                    status = I18n.get("gm-addon.screen.plots.never");
-                } else if (days <= 0) {
-                    status = I18n.get("gm-addon.widget.plot.expired");
+                    cardTex = GMSettingsScreen.TEX_CARD_NORMAL;
+                    statusColor = 0xFF94A3B8;
+                } else if (days <= 3) {
+                    cardTex = GMSettingsScreen.TEX_HUD_ALERT_RED;
+                    statusColor = 0xFFFCA5A5;
+                } else if (days <= addon.getConfig().plotReminderDaysBefore) {
+                    cardTex = GMSettingsScreen.TEX_HUD_ALERT_AMBER;
+                    statusColor = 0xFFFDE047;
                 } else {
-                    status = I18n.get("gm-addon.screen.plots.until", p.deadlineDate().format(PlotModule.DATE_FORMAT), days);
+                    cardTex = GMSettingsScreen.TEX_HUD_ALERT_GREEN;
+                    statusColor = 0xFF86EFAC;
                 }
-                graphics.text(this.font, status, right - 8 - this.font.width(status), y + 9, color, true);
+
+                GMSettingsScreen.drawNineSlice(graphics, cardTex, left, y, rowW, ROW_HEIGHT - 4, 8);
+                GMSettingsScreen.drawTexture(graphics, plotIcon, left + 8, y + 7, 16, 16);
+
+                String rawStatus;
+                if (!p.hasBeenVisited()) {
+                    rawStatus = I18n.get("gm-addon.screen.plots.never");
+                } else if (days <= 0) {
+                    rawStatus = I18n.get("gm-addon.widget.plot.expired").replaceAll("\u00a7[0-9a-fk-or]", "");
+                } else {
+                    rawStatus = I18n.get("gm-addon.screen.plots.until", p.deadlineDate().format(PlotModule.DATE_FORMAT), days);
+                }
+                Component statusComp = GMSettingsScreen.uText(rawStatus);
+                int statusW = Math.min(rowW / 2 - 12, this.font.width(statusComp));
+                int leftTextW = Math.max(60, rowW - statusW - 48);
+
+                GMSettingsScreen.drawFittedText(graphics, this.font, GMSettingsScreen.uText(p.name + " (" + p.type + ")"), left + 28, y + 5, leftTextW, 0xFFF8FAFC, true);
+                GMSettingsScreen.drawFittedText(graphics, this.font, GMSettingsScreen.uText(p.x + ", " + p.y + ", " + p.z + (p.area.isEmpty() ? "" : "  |  " + p.area)), left + 28, y + 16, leftTextW, 0xFF94A3B8, false);
+                GMSettingsScreen.drawFittedText(graphics, this.font, statusComp, right - 10 - statusW, y + 11, statusW, statusColor, true);
             }
             y += ROW_HEIGHT;
         }
         graphics.disableScissor();
 
-        graphics.fill(0, 0, this.width, HEADER_HEIGHT, 0xFF0F172A);
-        graphics.horizontalLine(0, this.width, HEADER_HEIGHT, 0xFF38BDF8);
-        graphics.text(this.font, I18n.get("gm-addon.screen.plots.title"), 12, 13, 0xFFF8FAFC, true);
-        graphics.fill(0, this.height - FOOTER_HEIGHT, this.width, this.height, 0xFF0F172A);
-        graphics.horizontalLine(0, this.width, this.height - FOOTER_HEIGHT, 0xFF334155);
+        // Top and bottom Modern 9-slice bars
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_WINDOW_BG, 4, 2, this.width - 8, HEADER_HEIGHT - 2, 8);
+        GMSettingsScreen.drawTexture(graphics, plotIcon, 14, 11, 16, 16);
+        GMSettingsScreen.drawFittedText(graphics, this.font, GMSettingsScreen.uText(I18n.get("gm-addon.screen.plots.title")), 34, 15, this.width - 220, 0xFFF8FAFC, true);
+
+        GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_WINDOW_BG, 4, this.height - FOOTER_HEIGHT, this.width - 8, FOOTER_HEIGHT - 2, 8);
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
