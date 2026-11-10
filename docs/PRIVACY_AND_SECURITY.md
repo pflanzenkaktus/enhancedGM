@@ -1,6 +1,6 @@
 # Privacy & Security Technical Overview
 
-This document provides a comprehensive, transparent, and verifiable overview of data handling, network communication, storage locations, and security policies in the **GermanMiner Addon (`enhancedGM`)**.
+This document provides a comprehensive, transparent, and verifiable overview of data handling, network communication, storage locations, and security policies in **enhancedGM**.
 
 ---
 

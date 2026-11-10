@@ -1,6 +1,6 @@
-# GermanMiner Addon (`gm-addon`) — Complete System Architecture
+# enhancedGM (`gm-addon`) — Complete System Architecture
 
-This document explains how every part of the **GermanMiner Addon** works internally, from startup and server-detection to BlueMap tile streaming, Firebase Realtime Database synchronization, Speed Camera ("Blitzer") auto-detection, Speedometer ("Tacho") & Tempomat synchronization.
+This document explains how every part of **enhancedGM** works internally, from startup and server-detection to BlueMap tile streaming, Firebase Realtime Database synchronization, Speed Camera ("Blitzer") auto-detection, Speedometer ("Tacho") & Tempomat synchronization.
 
 ---
 
@@ -142,7 +142,7 @@ In [`GMAddonClient.isActiveOnCurrentServer()`](../v26_3/src/main/java/de/pflanze
   - Client implementation (:v26_3): [PlotModule](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/module/PlotModule.java), [PlotOverviewScreen](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/screen/PlotOverviewScreen.java), [PlotScanPromptScreen](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/screen/PlotScanPromptScreen.java)
 
 - **The 60-Day Server Rule**:
-  GermanMiner automatically clears and resets rented/purchased plots (mie*, kau*) and apartments if they have not been stepped on for 60 consecutive days (OwnedPlot.EXPIRY_DAYS = 60). The addon calculates exact deadlines: deadlineEpochMs = lastVisitedEpochMs + (60 * 24 * 60 * 60 * 1000L).
+  GermanMiner automatically clears and resets rented/purchased plots (mie*, kau*) and apartments if they have not been stepped on for 60 consecutive days (OwnedPlot.EXPIRY_DAYS = 60). enhancedGM calculates exact deadlines: deadlineEpochMs = lastVisitedEpochMs + (60 * 24 * 60 * 60 * 1000L).
 
 - **Automated Menu Scan & Multi-Page Pagination**:
   - Triggered via Settings button (*Scan starten*) or initial prompt dialog (*Jetzt scannen*).

@@ -1,19 +1,23 @@
 package de.pflanzenkaktus.enhancedgm.client.module;
 
 import de.pflanzenkaktus.enhancedgm.client.GMAddonClient;
+import de.pflanzenkaktus.enhancedgm.client.compat.VersionCompat;
 import de.pflanzenkaktus.enhancedgm.client.util.I18n;
 import de.pflanzenkaktus.enhancedgm.config.AddonConfig;
 import de.pflanzenkaktus.enhancedgm.module.HudWidgetDescriptor;
 import de.pflanzenkaktus.enhancedgm.module.Setting;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -25,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -397,6 +402,11 @@ public class TachoModule implements ClientFeatureModule {
                             client.player.connection.sendCommand("vehicles motor");
                             LOGGER.info("Dispatched automatic engine start command (/vehicles motor)");
                         }
+                        if (!addon.getConfig().autoGearD && !addon.getConfig().autoGearDHintShown) {
+                            addon.getConfig().autoGearDHintShown = true;
+                            addon.saveConfig();
+                            sendAutoGearPrompt(addon, client);
+                        }
                     }
                 }
             }
@@ -499,6 +509,41 @@ public class TachoModule implements ClientFeatureModule {
             }
             return false;
         }
+    }
+
+    private void sendAutoGearPrompt(GMAddonClient addon, Minecraft client) {
+        if (client == null || client.player == null) return;
+
+        Component prefix = Component.literal("[enhancedGM] ").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
+        Component prompt = Component.translatable("gm-addon.chat.autogear_prompt").withStyle(ChatFormatting.YELLOW);
+
+        Component enableBtn = Component.literal(" [")
+            .withStyle(ChatFormatting.DARK_GRAY)
+            .append(Component.translatable("gm-addon.chat.autogear_prompt_enable")
+                .withStyle(style -> style
+                    .withColor(ChatFormatting.GREEN)
+                    .withUnderlined(true)
+                    .withClickEvent(new ClickEvent.OpenUrl(URI.create("enhancedgm://autogear")))
+                    .withHoverEvent(new HoverEvent.ShowText(Component.translatable("gm-addon.chat.autogear_prompt_enable_tooltip")))))
+            .append(Component.literal("]").withStyle(ChatFormatting.DARK_GRAY));
+
+        Component settingsBtn = Component.literal(" [")
+            .withStyle(ChatFormatting.DARK_GRAY)
+            .append(Component.translatable("gm-addon.chat.autogear_prompt_settings")
+                .withStyle(style -> style
+                    .withColor(ChatFormatting.AQUA)
+                    .withUnderlined(true)
+                    .withClickEvent(new ClickEvent.OpenUrl(URI.create("enhancedgm://settings")))
+                    .withHoverEvent(new HoverEvent.ShowText(Component.translatable("gm-addon.chat.autogear_prompt_settings_tooltip")))))
+            .append(Component.literal("]").withStyle(ChatFormatting.DARK_GRAY));
+
+        Component message = Component.empty()
+            .append(prefix)
+            .append(prompt)
+            .append(enableBtn)
+            .append(settingsBtn);
+
+        client.player.sendSystemMessage(message);
     }
 
     /**

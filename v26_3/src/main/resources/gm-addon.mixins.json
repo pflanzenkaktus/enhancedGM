@@ -4,7 +4,8 @@
   "package": "de.pflanzenkaktus.enhancedgm.client.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "GlyphRenderStateMixin"
+    "GlyphRenderStateMixin",
+    "ScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 0

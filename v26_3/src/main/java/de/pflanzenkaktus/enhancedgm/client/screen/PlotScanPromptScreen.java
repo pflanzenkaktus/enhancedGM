@@ -10,7 +10,7 @@ import net.minecraft.client.input.KeyEvent;
 
 /**
  * Popup shown when no plots have been scanned yet, asking the player to scan them,
- * styled in Modern Ultra-HD design language.
+ * styled in Modern design language.
  */
 public class PlotScanPromptScreen extends Screen {
     private static final int CARD_W = 350;

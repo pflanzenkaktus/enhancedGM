@@ -1,8 +1,10 @@
 package de.pflanzenkaktus.enhancedgm.client.module;
 
 import de.pflanzenkaktus.enhancedgm.client.GMAddonClient;
+import de.pflanzenkaktus.enhancedgm.client.update.AutoUpdater;
 import de.pflanzenkaktus.enhancedgm.client.util.I18n;
 import de.pflanzenkaktus.enhancedgm.config.AddonConfig;
+import de.pflanzenkaktus.enhancedgm.feature.UpdateChecker;
 import de.pflanzenkaktus.enhancedgm.module.Setting;
 import net.minecraft.client.Minecraft;
 
@@ -185,6 +187,57 @@ public class DebugModule implements ClientFeatureModule {
                         mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§7[enhancedGM] Prüfe auf GitHub nach Updates..."));
                     }
                     addon.getUpdateChecker().checkForUpdatesAsync(true);
+                }
+            ),
+            new Setting.ActionSetting(
+                "install_update_now",
+                I18n.get("gm-addon.setting.install_update_now"),
+                I18n.get("gm-addon.setting.install_update_now.btn"),
+                I18n.get("gm-addon.setting.install_update_now.desc"),
+                () -> {
+                    UpdateChecker.ReleaseInfo rel = addon.getUpdateChecker().getLatestRelease();
+                    Minecraft mc = Minecraft.getInstance();
+                    if (rel == null || !rel.hasDownloadableJar()) {
+                        if (mc.player != null) {
+                            mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[enhancedGM] §c")
+                                .append(net.minecraft.network.chat.Component.translatable("gm-addon.chat.update_no_asset")));
+                        }
+                        return;
+                    }
+                    if (AutoUpdater.isUpdateScheduledOnExit()) {
+                        if (mc.player != null) {
+                            mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[enhancedGM] §e")
+                                .append(net.minecraft.network.chat.Component.translatable("gm-addon.chat.update_already_downloaded")));
+                        }
+                        return;
+                    }
+                    if (mc.player != null) {
+                        String status = I18n.get("gm-addon.chat.update_downloading", rel.version());
+                        mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[enhancedGM] §e" + status));
+                    }
+                    AutoUpdater.startUpdateAsync(
+                        rel,
+                        statusMsg -> {
+                            Minecraft m = Minecraft.getInstance();
+                            if (m != null) m.execute(() -> {
+                                if (m.player != null) m.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[enhancedGM] §e" + statusMsg));
+                            });
+                        },
+                        ver -> {
+                            Minecraft m = Minecraft.getInstance();
+                            if (m != null) m.execute(() -> {
+                                if (m.player != null) m.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[enhancedGM] §a")
+                                    .append(net.minecraft.network.chat.Component.translatable("gm-addon.chat.update_success", ver)));
+                            });
+                        },
+                        err -> {
+                            Minecraft m = Minecraft.getInstance();
+                            if (m != null) m.execute(() -> {
+                                if (m.player != null) m.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[enhancedGM] §c")
+                                    .append(net.minecraft.network.chat.Component.translatable("gm-addon.chat.update_failed", err)));
+                            });
+                        }
+                    );
                 }
             )
         );

@@ -10,7 +10,7 @@ import net.minecraft.client.input.KeyEvent;
 
 /**
  * Initial setup popup dialog prompting the player whether to enable
- * automatic GitHub release update notifications, styled in Modern Ultra-HD design language.
+ * automatic GitHub release update notifications, styled in Modern design language.
  */
 public class UpdateConsentPromptScreen extends Screen {
     private static final int CARD_W = 350;

@@ -9,14 +9,49 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Lightweight asynchronous GitHub release update checker.
  * Only connects if consent was granted or when manually triggered in settings.
  */
 public class UpdateChecker {
-    public record ReleaseInfo(String version, String url, String title, String body) {}
+    private static final Pattern SHA256_HEX_PATTERN = Pattern.compile("(?i)(?:sha[-_]?256[\\s:=]+)([0-9a-f]{64})");
+
+    public record ReleaseInfo(
+        String version,
+        String url,
+        String title,
+        String body,
+        String jarUrl,
+        String jarName,
+        long jarSizeBytes,
+        String expectedSha256,
+        String sha256AssetUrl
+    ) {
+        public ReleaseInfo(String version, String url, String title, String body, String jarUrl, String jarName, long jarSizeBytes) {
+            this(version, url, title, body, jarUrl, jarName, jarSizeBytes, "", "");
+        }
+
+        public boolean hasDownloadableJar() {
+            return jarUrl != null && !jarUrl.isBlank();
+        }
+
+        public boolean hasSha256() {
+            return (expectedSha256 != null && !expectedSha256.isBlank()) || (sha256AssetUrl != null && !sha256AssetUrl.isBlank());
+        }
+
+        public String getFormattedSize() {
+            if (jarSizeBytes <= 0) return "";
+            if (jarSizeBytes < 1024L * 1024L) {
+                return String.format(Locale.ROOT, "%.1f KB", jarSizeBytes / 1024.0);
+            }
+            return String.format(Locale.ROOT, "%.1f MB", jarSizeBytes / (1024.0 * 1024.0));
+        }
+    }
 
     private final AddonConfig config;
     private final String currentVersion;
@@ -29,6 +64,21 @@ public class UpdateChecker {
     public UpdateChecker(AddonConfig config, String currentVersion) {
         this.config = config;
         this.currentVersion = currentVersion;
+        if (config.latestReleaseTag != null && !config.latestReleaseTag.isBlank()
+            && isNewer(config.latestReleaseTag, currentVersion)) {
+            this.latestRelease = new ReleaseInfo(
+                config.latestReleaseTag,
+                config.latestReleaseUrl,
+                config.latestReleaseTag,
+                "",
+                config.latestReleaseJarUrl,
+                config.latestReleaseJarName,
+                config.latestReleaseJarSizeBytes,
+                config.latestReleaseSha256,
+                config.latestReleaseSha256AssetUrl
+            );
+            this.updateAvailable = true;
+        }
     }
 
     public void setOnUpdateFoundListener(Consumer<ReleaseInfo> listener) {
@@ -61,8 +111,8 @@ public class UpdateChecker {
         }
 
         long now = System.currentTimeMillis();
-        // Rate-limit automated checks to once every 4 hours
-        if (!manualTrigger && (now - config.lastUpdateCheckEpochMs < 4L * 3600L * 1000L)) {
+        // Rate-limit automated checks to once every 4 hours, but always allow checking on startup/join if latestRelease is not yet loaded
+        if (!manualTrigger && latestRelease != null && (now - config.lastUpdateCheckEpochMs < 4L * 3600L * 1000L)) {
             return;
         }
 
@@ -89,11 +139,54 @@ public class UpdateChecker {
                         String body = json.has("body") && !json.get("body").isJsonNull()
                             ? json.get("body").getAsString() : "";
 
+                        String jarUrl = "";
+                        String jarName = "";
+                        long jarSize = 0L;
+                        String sha256AssetUrl = "";
+                        String expectedSha256 = "";
+
+                        if (json.has("assets") && json.get("assets").isJsonArray()) {
+                            var assets = json.getAsJsonArray("assets");
+                            for (var elem : assets) {
+                                if (elem.isJsonObject()) {
+                                    var obj = elem.getAsJsonObject();
+                                    String name = obj.has("name") && !obj.get("name").isJsonNull() ? obj.get("name").getAsString() : "";
+                                    String assetUrl = obj.has("browser_download_url") && !obj.get("browser_download_url").isJsonNull()
+                                        ? obj.get("browser_download_url").getAsString() : "";
+
+                                    if (name.endsWith(".jar") && !name.contains("-sources") && !name.contains("-dev")) {
+                                        jarName = name;
+                                        jarUrl = assetUrl;
+                                        jarSize = obj.has("size") && !obj.get("size").isJsonNull() ? obj.get("size").getAsLong() : 0L;
+                                        if (name.startsWith("enhancedGM")) {
+                                            // Prefer official enhancedGM jar
+                                        }
+                                    } else if (name.endsWith(".sha256") || name.endsWith(".sha256sum") || name.equalsIgnoreCase("checksums.txt")) {
+                                        sha256AssetUrl = assetUrl;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Try extracting SHA-256 from release body description
+                        if (!body.isBlank()) {
+                            Matcher m = SHA256_HEX_PATTERN.matcher(body);
+                            if (m.find()) {
+                                expectedSha256 = m.group(1).toLowerCase(Locale.ROOT);
+                            }
+                        }
+
                         config.lastUpdateCheckEpochMs = System.currentTimeMillis();
                         config.latestReleaseUrl = htmlUrl;
+                        config.latestReleaseTag = tagName;
+                        config.latestReleaseJarUrl = jarUrl;
+                        config.latestReleaseJarName = jarName;
+                        config.latestReleaseJarSizeBytes = jarSize;
+                        config.latestReleaseSha256 = expectedSha256;
+                        config.latestReleaseSha256AssetUrl = sha256AssetUrl;
 
                         if (isNewer(tagName, currentVersion)) {
-                            this.latestRelease = new ReleaseInfo(tagName, htmlUrl, title, body);
+                            this.latestRelease = new ReleaseInfo(tagName, htmlUrl, title, body, jarUrl, jarName, jarSize, expectedSha256, sha256AssetUrl);
                             this.updateAvailable = true;
                             if (onUpdateFoundListener != null) {
                                 onUpdateFoundListener.accept(this.latestRelease);

@@ -1,11 +1,25 @@
 # Changelog
 
-All notable changes to the **enhancedGM** (GermanMiner Addon) project will be documented in this file.
+All notable changes to the **enhancedGM** project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+
+## [0.4.1] - 2026-11-10
+
+### Added
+- **Direct In-Game Auto-Updater with SHA-256 Checksum Verification**:
+  - One-click update directly from chat notification (`[Jetzt aktualisieren]`) without opening a browser or sending server commands.
+  - Custom client-side URI handler (`enhancedgm://update`) intercepted safely in `ScreenMixin`.
+  - Enforced HTTPS and GitHub domain whitelisting (`github.com`, `*.githubusercontent.com`) to prevent untrusted redirects.
+  - Cryptographic SHA-256 checksum verification against release notes and `.sha256` assets.
+  - File size and ZIP archive integrity validation prior to JVM shutdown staging.
+- **Interactive Auto-Gear Hint**:
+  - First-engine-start interactive chat prompt with direct action buttons (`[Jetzt aktivieren]`, `[Einstellungen]`).
+- **Brand Consistency**:
+  - Fully standardized on `enhancedGM` across screen titles, screen reader accessibility labels, and documentation.
 
 ## [0.4.0] - 2026-11-10
 

@@ -26,7 +26,7 @@ import java.util.Locale;
 import static de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen.uText;
 
 /**
- * Renders the modular GM-Addon HUD widgets in the Modern Ultra-HD Design Language:
+ * Renders the modular GM-Addon HUD widgets in the Modern Design Language:
  * - 8x-supersampled bilinear-filtered 9-slice rounded cards (zero pixel staircases)
  * - TrueType Calibri Bold HD typography (gm-addon:modern) with adaptive auto-fitting
  * - 128x128 bilinear-filtered vector icons, circular speed signs, and analog dial rings
@@ -63,7 +63,7 @@ public class HudOverlayRenderer {
     }
 
     /**
-     * Renders the BlueMap Minimap centered on the player in Modern Ultra-HD style.
+     * Renders the BlueMap Minimap centered on the player in Modern style.
      */
     public void renderMinimapWidget(GuiGraphicsExtractor graphics, Minecraft mc, float partialTick, boolean editorPreview) {
         AddonConfig cfg = addon.getConfig();
@@ -242,7 +242,7 @@ public class HudOverlayRenderer {
     }
 
     /**
-     * Renders the Speed Camera ("Blitzer") Warning HUD Widget in Modern Ultra-HD style.
+     * Renders the Speed Camera ("Blitzer") Warning HUD Widget in Modern style.
      */
     public void renderBlitzerAlertWidget(GuiGraphicsExtractor graphics, Minecraft mc, boolean editorPreview) {
         BlitzerWarningTracker.BlitzerAlert alert = addon.getBlitzerTracker().getCurrentAlert();
@@ -314,7 +314,7 @@ public class HudOverlayRenderer {
     }
 
     /**
-     * Renders the 20-second Spawn / Respawn Protection ("Spawnschutz") HUD Widget in Modern Ultra-HD style.
+     * Renders the 20-second Spawn / Respawn Protection ("Spawnschutz") HUD Widget in Modern style.
      */
     public void renderSpawnProtectionWidget(GuiGraphicsExtractor graphics, Minecraft mc, boolean editorPreview) {
         SpawnProtectionTracker tracker = addon.getSpawnProtectionTracker();
@@ -388,7 +388,7 @@ public class HudOverlayRenderer {
     }
 
     /**
-     * Renders the Speedometer ("Tacho") HUD Widget in either ANALOG or DIGITAL Modern Ultra-HD style.
+     * Renders the Speedometer ("Tacho") HUD Widget in either ANALOG or DIGITAL Modern style.
      */
     public void renderTachoWidget(GuiGraphicsExtractor graphics, Minecraft mc, float partialTick, boolean editorPreview) {
         AddonConfig cfg = addon.getConfig();
@@ -460,7 +460,7 @@ public class HudOverlayRenderer {
         // Smooth 8x-supersampled 9-slice instrument housing
         GMSettingsScreen.drawNineSlice(graphics, housingTex, 0, 0, width, height, 8);
 
-        // 256x256 Ultra-HD Bilinear-Filtered Circular Dial Face
+        // 256x256 Bilinear-Filtered Circular Dial Face
         GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_TACHO_DIAL, cx - 43, cy - 43, 86, 86);
 
         double startDeg = -125.0;
@@ -658,7 +658,7 @@ public class HudOverlayRenderer {
     }
 
     /**
-     * Projects nearby Speed Cameras in 3D world space onto the HUD viewport in Modern Ultra-HD style.
+     * Projects nearby Speed Cameras in 3D world space onto the HUD viewport in Modern style.
      */
     public void render3dWorldBlitzerMarkers(GuiGraphicsExtractor graphics, Minecraft mc, float partialTick) {
         LocalPlayer player = mc.player;

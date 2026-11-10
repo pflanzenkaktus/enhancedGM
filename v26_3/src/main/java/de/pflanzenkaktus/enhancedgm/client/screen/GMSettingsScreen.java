@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Ultra-HD Modern -inspired Settings Screen for enhancedGM.
+ * Modern Settings Screen for enhancedGM.
  * Features:
  * - TrueType Calibri Bold HD typography (gm-addon:modern) at 8x FreeType oversampling + hardware bilinear filtering
  * - 8x-supersampled (256x256) Bilinear-Filtered 9-slice UI surfaces (zero visible pixel staircases)
@@ -496,7 +496,7 @@ public class GMSettingsScreen extends Screen {
         // Smooth HD Version Pill Badge
         String modVer = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("gm-addon")
             .map(c -> "v" + c.getMetadata().getVersion().getFriendlyString())
-            .orElse("v0.4.0");
+            .orElse("v0.3.1");
         Component versionText = uText(modVer);
         int vTextW = this.font.width(versionText);
         int vBadgeW = vTextW + 14;

@@ -1,4 +1,4 @@
-# GermanMiner Addon (`enhancedGM`)
+# enhancedGM
 
 Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1.2 – 26.3).
 
@@ -37,7 +37,7 @@ Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1
 
 2. **Speed Camera ("Blitzer") Warning & Firebase Cloud Database (`BlitzerModule`)**:
    - **Multi-Stage Proximity & Heading Alerts**: Evaluates 3D distance, movement/look heading cone, and current `km/h` vs. camera speed limit (`APPROACHING`, `URGENT`, `OVER_SPEED_LIMIT`), plus 3D floating world markers and acoustic warning chimes.
-   - **Automatic Chat Flash Detection (`autoAdded: true`)**: Detects when GermanMiner flashes you in chat (`"Du wurdest mit 77 km/h in einer 70 km/h-Zone geblitzt..."`), extracts the speed limit, records your exact coordinates with `"autoAdded": true`, and uploads (`PATCH`) the new camera to Firebase (`https://gm-addon-a5507-default-rtdb.europe-west1.firebasedatabase.app/speed_cameras.json`).
+   - **Automatic Chat Flash Detection (`autoAdded: true`)**: Detects when you get flashed in chat (`"Du wurdest mit 77 km/h in einer 70 km/h-Zone geblitzt..."`), extracts the speed limit, records your exact coordinates with `"autoAdded": true`, and uploads (`PATCH`) the new camera to Firebase (`https://gm-addon-a5507-default-rtdb.europe-west1.firebasedatabase.app/speed_cameras.json`).
    - **Non-Stacking Spatial Deduplication (`28m` radius)**: Automatically merges nearby cameras within `blitzerDedupeRadiusBlocks` so multiple flashes at the same intersection never stack duplicate icons.
    - **Vehicle-Only Mode (`blitzerOnlyInVehicle`)**: Suppresses warnings, sounds, and 3D world markers when walking on foot.
 
@@ -72,7 +72,7 @@ Modulares Client-Addon für **GermanMiner** auf Basis von Fabric (Minecraft 26.1
 
 ## Default Keybindings
 
-All keybindings are registered under the **"GermanMiner Addon"** category in Minecraft's standard *Options → Controls → Key Binds* menu:
+All keybindings are registered under the **"enhancedGM"** category in Minecraft's standard *Options → Controls → Key Binds* menu:
 
 | Key | Translation Key | Action |
 | :--- | :--- | :--- |
@@ -127,7 +127,7 @@ gm-addon/
 ```bash
 ./gradlew test build
 ```
-The compiled mod JAR will be located at `v26_3/build/libs/enhancedGM-0.4.0.jar`.
+The compiled mod JAR will be located at `v26_3/build/libs/enhancedGM-0.4.1.jar`.
 
 ### 2. Install to Minecraft Fabric Profile
 Copy the generated JAR from `v26_3/build/libs/` into your Minecraft profile's `mods/` directory.

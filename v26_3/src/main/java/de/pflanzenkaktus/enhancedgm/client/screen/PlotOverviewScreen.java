@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * Lists all scanned plots / apartments with the date by which they have to be entered again,
- * styled in Modern Ultra-HD design language.
+ * styled in Modern design language.
  */
 public class PlotOverviewScreen extends Screen {
     private static final int HEADER_HEIGHT = 38;

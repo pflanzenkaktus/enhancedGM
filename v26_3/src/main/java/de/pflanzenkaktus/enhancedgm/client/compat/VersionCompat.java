@@ -311,6 +311,22 @@ public final class VersionCompat {
         }
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static net.minecraft.network.chat.ClickEvent createRunCommandClickEvent(String command) {
+        try {
+            return new net.minecraft.network.chat.ClickEvent.RunCommand(command);
+        } catch (Throwable t) {
+            try {
+                Class<?> actionClass = Class.forName("net.minecraft.network.chat.ClickEvent$Action");
+                Object runCommandAction = Enum.valueOf((Class<Enum>) actionClass, "RUN_COMMAND");
+                java.lang.reflect.Constructor<?> ctor = net.minecraft.network.chat.ClickEvent.class.getConstructor(actionClass, String.class);
+                return (net.minecraft.network.chat.ClickEvent) ctor.newInstance(runCommandAction, command);
+            } catch (Throwable t2) {
+                return null;
+            }
+        }
+    }
+
     /**
      * Drops the currently held item (1 item from stack) in both 26.1.2 and 26.3+.
      * In 26.3+: mc.gameMode.dropItem(mc.player, false)

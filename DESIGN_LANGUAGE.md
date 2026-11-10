@@ -1,6 +1,6 @@
-# enhancedGM — Ultra-HD Design System
+# enhancedGM — Modern Design System
 
-Dieses Dokument beschreibt das **Ultra-HD Design-System** von **enhancedGM**, das durchgängig im Einstellungsmenü (`GMSettingsScreen`), im interaktiven HUD-Layout-Editor (`HudEditorScreen`) sowie in allen In-Game-HUD-Elementen (`HudOverlayRenderer` & `PlotModule`) zum Einsatz kommt.
+Dieses Dokument beschreibt das **Modern Design-System** von **enhancedGM**, das durchgängig im Einstellungsmenü (`GMSettingsScreen`), im interaktiven HUD-Layout-Editor (`HudEditorScreen`) sowie in allen In-Game-HUD-Elementen (`HudOverlayRenderer` & `PlotModule`) zum Einsatz kommt.
 
 ---
 

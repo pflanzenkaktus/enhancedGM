@@ -21,6 +21,12 @@ public class AddonConfig {
     public boolean checkUpdates = true;
     public boolean updateConsentPromptDismissed = false;
     public String latestReleaseUrl = "https://github.com/pflanzenkaktus/enhancedGM/releases/latest";
+    public String latestReleaseTag = "";
+    public String latestReleaseJarUrl = "";
+    public String latestReleaseJarName = "";
+    public long latestReleaseJarSizeBytes = 0L;
+    public String latestReleaseSha256 = "";
+    public String latestReleaseSha256AssetUrl = "";
     public long lastUpdateCheckEpochMs = 0L;
 
     // Server activation & language
@@ -106,7 +112,8 @@ public class AddonConfig {
     public boolean tachoEnabled = true;
     public boolean tachoOnlyInVehicle = true;
     public boolean autoMotorStart = true;
-    public boolean autoGearD = true;
+    public boolean autoGearD = false;
+    public boolean autoGearDHintShown = false;
     public String tachoStyle = "ANALOG"; // "ANALOG" or "DIGITAL"
     public int tachoX = 200;
     public int tachoY = 180;
@@ -174,13 +181,13 @@ public class AddonConfig {
                     return loaded;
                 }
             } catch (Exception e) {
-                System.err.println("[GM-Addon] Failed to read config.json: " + e.getMessage());
+                System.err.println("[enhancedGM] Failed to read config.json: " + e.getMessage());
                 try {
                     Path backupPath = configFile.resolveSibling("config.json.corrupted." + System.currentTimeMillis() + ".bak");
                     Files.copy(configFile, backupPath, StandardCopyOption.REPLACE_EXISTING);
-                    System.err.println("[GM-Addon] Preserved corrupted config as backup: " + backupPath.getFileName());
+                    System.err.println("[enhancedGM] Preserved corrupted config as backup: " + backupPath.getFileName());
                 } catch (IOException backupEx) {
-                    System.err.println("[GM-Addon] Failed to create backup of corrupted config: " + backupEx.getMessage());
+                    System.err.println("[enhancedGM] Failed to create backup of corrupted config: " + backupEx.getMessage());
                 }
             }
         }
@@ -198,7 +205,7 @@ public class AddonConfig {
                 GSON.toJson(this, writer);
             }
         } catch (IOException e) {
-            System.err.println("[GM-Addon] Failed to save config.json: " + e.getMessage());
+            System.err.println("[enhancedGM] Failed to save config.json: " + e.getMessage());
         }
     }
 }

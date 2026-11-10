@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Interactive Fullscreen GermanMiner BlueMap screen inside Minecraft in Modern Ultra-HD style.
+ * Interactive Fullscreen GermanMiner BlueMap screen inside Minecraft in Modern style.
  * Supports drag-to-pan, scroll-to-zoom (LOD 1 & LOD 2), Follow-Player lock,
  * Speed Camera & BlueMap POI marker filtering, and hover tooltips.
  */

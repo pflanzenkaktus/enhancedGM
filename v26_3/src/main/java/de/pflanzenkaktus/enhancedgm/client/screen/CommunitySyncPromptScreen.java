@@ -10,7 +10,7 @@ import net.minecraft.client.input.KeyEvent;
 
 /**
  * Initial setup popup dialog prompting the player whether to enable
- * community speed camera cloud synchronization, styled in Modern Ultra-HD design language.
+ * community speed camera cloud synchronization, styled in Modern design language.
  */
 public class CommunitySyncPromptScreen extends Screen {
     private static final int CARD_W = 350;

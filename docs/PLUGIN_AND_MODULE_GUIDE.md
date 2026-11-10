@@ -1,6 +1,6 @@
 # How to Create Plugins / Feature Modules (`PLUGIN_AND_MODULE_GUIDE.md`)
 
-The **GermanMiner Addon (`gm-addon`)** is built around a **Plugin / Feature Module Architecture**. Every feature in the addon (Minimap, Tacho, Blitzer-Warnung, Spawnschutz) is a self-contained module implementing [`ClientFeatureModule`](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/module/ClientFeatureModule.java).
+The **enhancedGM (`gm-addon`)** project is built around a **Plugin / Feature Module Architecture**. Every feature in the addon (Minimap, Tacho, Blitzer-Warnung, Spawnschutz) is a self-contained module implementing [`ClientFeatureModule`](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/module/ClientFeatureModule.java).
 
 When you register a new module in [`ModuleManager`](../v26_3/src/main/java/de/pflanzenkaktus/enhancedgm/client/module/ModuleManager.java):
 1. **Settings UI (`O` & Mod Menu)** automatically creates a new category tab in the left sidebar and generates interactive sliders, toggles, cycle buttons, text boxes, and action buttons for all `Setting<?>` items returned by your module.
