@@ -1,20 +1,50 @@
 {
   "etcs.info": {
+    "category": "master",
     "subtitle": "subtitles.gm-addon.etcs.info",
     "sounds": [
-      "gm-addon:etcs/s_info"
+      "gm-addon:etcs/s_info",
+      "gm-addon:s_info"
+    ]
+  },
+  "etcs_info": {
+    "category": "master",
+    "subtitle": "subtitles.gm-addon.etcs.info",
+    "sounds": [
+      "gm-addon:etcs/s_info",
+      "gm-addon:s_info"
     ]
   },
   "etcs.toofast": {
+    "category": "master",
     "subtitle": "subtitles.gm-addon.etcs.toofast",
     "sounds": [
-      "gm-addon:etcs/s1_toofast"
+      "gm-addon:etcs/s1_toofast",
+      "gm-addon:s1_toofast"
+    ]
+  },
+  "etcs_toofast": {
+    "category": "master",
+    "subtitle": "subtitles.gm-addon.etcs.toofast",
+    "sounds": [
+      "gm-addon:etcs/s1_toofast",
+      "gm-addon:s1_toofast"
     ]
   },
   "etcs.warning": {
+    "category": "master",
     "subtitle": "subtitles.gm-addon.etcs.warning",
     "sounds": [
-      "gm-addon:etcs/s2_warning"
+      "gm-addon:etcs/s2_warning",
+      "gm-addon:s2_warning"
+    ]
+  },
+  "etcs_warning": {
+    "category": "master",
+    "subtitle": "subtitles.gm-addon.etcs.warning",
+    "sounds": [
+      "gm-addon:etcs/s2_warning",
+      "gm-addon:s2_warning"
     ]
   }
 }

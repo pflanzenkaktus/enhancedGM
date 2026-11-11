@@ -182,11 +182,12 @@ public class BlitzerModule implements ClientFeatureModule {
                     default -> null;
                 };
                 if (soundEvent != null) {
-                    client.player.playSound(soundEvent, volume, 1.0f);
+                    de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.playSound(client, soundEvent, volume, 1.0f);
                 }
             } else {
                 float pitch = (sound == BlitzerWarningTracker.AlertSound.INFO) ? 1.15f : 1.50f;
-                client.player.playSound(
+                de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.playSound(
+                    client,
                     SoundEvents.NOTE_BLOCK_PLING.value(),
                     volume,
                     pitch
