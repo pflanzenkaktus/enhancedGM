@@ -169,7 +169,7 @@ public class BlitzerModule implements ClientFeatureModule {
             if (!cfg.playWarningSound || "OFF".equalsIgnoreCase(cfg.blitzerSoundType)) {
                 return;
             }
-            float volume = Math.clamp(cfg.blitzerSoundVolume / 100.0f, 0.0f, 1.0f);
+            float volume = Math.clamp(cfg.blitzerSoundVolume / 100.0f, 0.0f, 1.0f) * 0.70f;
             if (volume <= 0.001f) {
                 return;
             }

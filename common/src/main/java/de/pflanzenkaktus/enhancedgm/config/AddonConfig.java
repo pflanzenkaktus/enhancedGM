@@ -71,7 +71,7 @@ public class AddonConfig {
     public double minSpeedBlocksPerSec = 1.5;
     public boolean playWarningSound = true;
     public String blitzerSoundType = "ETCS";
-    public int blitzerSoundVolume = 100;
+    public int blitzerSoundVolume = 65;
     public boolean render3dWorldMarkers = true;
 
     // Community Cloud Sync (Firebase)

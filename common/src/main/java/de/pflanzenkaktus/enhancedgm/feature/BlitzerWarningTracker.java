@@ -552,7 +552,10 @@ public class BlitzerWarningTracker {
         double lookYaw,
         double speedKmh
     ) {
-        double maxDist = cam.triggerRadius() > 0 ? cam.triggerRadius() : config.warningDistanceBlocks;
+        int limit = cam.effectiveSpeedLimit();
+        boolean isOverLimit = speedKmh > limit;
+        double baseDist = cam.triggerRadius() > 0 ? cam.triggerRadius() : config.warningDistanceBlocks;
+        double maxDist = isOverLimit ? (baseDist + 25.0) : baseDist;
         double dist = cam.horizontalDistanceTo(px, pz);
         if (dist > maxDist || Math.abs(cam.y() - py) > 45.0) {
             return Optional.empty();
@@ -572,9 +575,8 @@ public class BlitzerWarningTracker {
             return Optional.empty();
         }
 
-        int limit = cam.effectiveSpeedLimit();
         Urgency urgency;
-        if (speedKmh > limit) {
+        if (isOverLimit) {
             urgency = Urgency.OVER_SPEED_LIMIT;
         } else if (dist <= config.urgentDistanceBlocks) {
             urgency = Urgency.URGENT;
