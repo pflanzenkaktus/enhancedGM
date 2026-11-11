@@ -63,7 +63,7 @@
   "gm-addon.setting.blitzer.enable_3d_markers": "Show 3D World Markers",
   "gm-addon.setting.blitzer.enable_3d_markers.desc": "Shows floating camera markers with distance directly in the 3D world.",
   "gm-addon.setting.blitzer.sound_warning": "Warning Sound Mode",
-  "gm-addon.setting.blitzer.sound_warning.desc": "Audible alert profile for speed cameras: ETCS cab signaling tones (per ERA_ERTMS_015560), Minecraft Pling, or Off.",
+  "gm-addon.setting.blitzer.sound_warning.desc": "Audible alert profile for speed cameras: Modern ETCS chimes, classic Minecraft pling, or Off.",
   "gm-addon.cycle.blitzer_sound_type.etcs": "ETCS",
   "gm-addon.cycle.blitzer_sound_type.minecraft": "Minecraft",
   "gm-addon.cycle.blitzer_sound_type.off": "Off",

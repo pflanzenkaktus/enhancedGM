@@ -63,7 +63,7 @@
   "gm-addon.setting.blitzer.enable_3d_markers": "3D Welt-Marker anzeigen",
   "gm-addon.setting.blitzer.enable_3d_markers.desc": "Zeigt schwebende Blitzer-Markierungen mit Distanz direkt in der 3D-Welt.",
   "gm-addon.setting.blitzer.sound_warning": "Warnton-Modus",
-  "gm-addon.setting.blitzer.sound_warning.desc": "Akustisches Warnprofil fuer Blitzer: ETCS Fuehrerstandstoene (gemaess ERA_ERTMS_015560), Minecraft Pling oder Aus.",
+  "gm-addon.setting.blitzer.sound_warning.desc": "Akustisches Warnprofil für Blitzer: Moderne ETCS-Töne, klassisches Minecraft-Pling oder Aus.",
   "gm-addon.cycle.blitzer_sound_type.etcs": "ETCS",
   "gm-addon.cycle.blitzer_sound_type.minecraft": "Minecraft",
   "gm-addon.cycle.blitzer_sound_type.off": "Aus",
