@@ -10,8 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.2] - 2026-11-11
 
 ### Added
+- **Speed Camera Alert Suppression in Helicopters & Aircraft**:
+  - Automatically suppresses speed camera HUD alert cards, warning chimes, and 3D world markers while flying in an aircraft or helicopter (detected dynamically via BossBar altitude telemetry).
+- **Default Sound Profile Set to Minecraft**:
+  - Set the classic `Minecraft` pling sound profile as default for all new installations and user profiles.
 - **Modern Speed Camera Warning Audio (ETCS Mode)**:
-  - Selectable warning audio profile in settings: `ETCS` (Default), `Minecraft` (classic pling chime), or `Off`.
+  - Selectable warning audio profile in settings: `Minecraft` (Default), `ETCS`, or `Off`.
   - While driving within the speed limit, a subtle info chime plays once upon approaching a camera.
   - When exceeding the speed limit, an overspeed alert triggers and escalates to an urgent brake warning when approaching closely.
   - Dynamic Early Alert Radius: Automatically extends detection 25 meters further ahead when overspeeding, giving drivers more time to brake.
