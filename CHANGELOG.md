@@ -10,19 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.2] - 2026-11-11
 
 ### Added
-- **Neue Warntöne für Blitzer (ETCS-Modus)**:
-  - Wähle in den Blitzer-Einstellungen zwischen `ETCS`, `Minecraft` und `Aus`.
-  - Bei normaler Fahrt im Tempolimit ertönt ein dezenter Info-Ton.
-  - Bei Tempoüberschreitung warnt ein Signalton, der im Nahbereich dringlicher wird.
+- **Moderne Warntöne für Blitzer (ETCS-Modus)**:
+  - Neues Warnprofil im Menü wählbar: `ETCS` (Standard), `Minecraft` (klassisches Pling) oder `Aus`.
+  - Bei normaler Fahrt im Tempolimit ertönt ein dezenter Info-Ton bei Annäherung.
+  - Bei Tempoüberschreitung warnt ein Signalton, der im Nahbereich zur Bremsaufforderung dringlicher wird.
+  - Dynamischer Vorwarnradius: Schlägt bei überhöhter Geschwindigkeit automatisch 25 Meter früher an, um rechtzeitiges Abbremsen zu ermöglichen.
+  - Direkter Vorrang: Beschleunigen über das Tempolimit unterbricht Info-Töne sofort zugunsten des Warntons.
 - **Lautstärkeregler für Warntöne**:
-  - Neuer Schieberegler von 0% bis 100% für Blitzer-Signaltöne.
-- **Übersichtlichere Einstellungen**:
-  - Neue Unterkategorien für Debug- und Blitzer-Einstellungen.
+  - Neuer Schieberegler von 0% bis 100% in den Blitzer-Einstellungen (Standard auf angenehme 65% voreingestellt).
+- **Strukturierte Einstellungen**:
+  - Neue übersichtliche Unterkategorien für Debug- und Blitzer-Einstellungen.
 
 ### Fixed
-- **Decoupled Vehicle Automation from Speedometer HUD**:
-  - Automatic engine start and automatic gear shifting (Gang D) now continue to work reliably even when the speedometer HUD widget is disabled in the settings or HUD editor.
-  - The speedometer module remains active for background vehicle logic while suppressing widget rendering when disabled.
+- **Fahrzeug-Automation vom Tacho-HUD entkoppelt**:
+  - Automatischer Motorstart (`/vehicles motor`) und automatisches Gangeinlegen (`Gang: D`) funktionieren nun auch dann zuverlässig, wenn das Tacho-HUD-Widget in den Einstellungen oder im HUD-Editor deaktiviert ist.
+  - Das Modul bleibt für die Hintergrund-Fahrzeuglogik aktiv und blendet lediglich die optische Anzeige aus.
 
 ## [0.4.1] - 2026-11-10
 
