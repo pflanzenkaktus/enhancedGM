@@ -134,6 +134,15 @@ Copy the generated JAR from `v26_3/build/libs/` into your Minecraft profile's `m
 
 ---
 
+## Credits & Audio Attributions
+
+- **ETCS Cab Signaling Sounds**:
+  - The acoustic alert audio samples (`S_info`, `S1_toofast`, `S2_warning`) are sourced from the official European Union Agency for Railways (ERA) specification:
+  - Specification: [ERA_ERTMS_015560](https://www.era.europa.eu/system/files/2023-12/index006_-_ERA_ERTMS_015560_v400.zip) (ETCS Driver Machine Interface)
+  - Repository / Download Portal: [European Union Agency for Railways (ERA)](https://www.era.europa.eu/era-folder/1-ccs-tsi-appendix-mandatory-specifications-etcs-b4-r1-rmr-gsm-r-b1-mr1-frmcs-b0-ato-b1)
+
+---
+
 ## License
 
 All Rights Reserved. Copyright (c) 2026 pflanzenkaktus. See [LICENSE](LICENSE) for details.
