@@ -163,20 +163,8 @@ public class BlitzerModule implements ClientFeatureModule {
     public void onClientTick(GMAddonClient addon, Minecraft client) {
         if (client.player == null) return;
 
-        de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.tick(client);
-
         BlitzerWarningTracker tracker = addon.getBlitzerTracker();
         AddonConfig cfg = addon.getConfig();
-
-        if (de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.isWarningActive()) {
-            BlitzerWarningTracker.BlitzerAlert alert = tracker.getCurrentAlert();
-            boolean stillInWarning = alert != null
-                && alert.urgency() == BlitzerWarningTracker.Urgency.OVER_SPEED_LIMIT
-                && alert.distanceBlocks() <= cfg.urgentDistanceBlocks;
-            if (!stillInWarning) {
-                de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.requestGracefulWarningStop();
-            }
-        }
 
         if (tracker.hasPendingAlertSound()) {
             BlitzerWarningTracker.AlertSound sound = tracker.consumePendingAlertSound();

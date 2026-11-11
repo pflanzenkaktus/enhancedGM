@@ -19,9 +19,6 @@ public final class GMSounds {
     public static final SoundEvent ETCS_WARNING = SoundEvent.createVariableRangeEvent(ETCS_WARNING_ID);
 
     private static SoundInstance currentPlayingInstance = null;
-    private static long currentSoundStartTimeMs = 0L;
-    private static boolean isWarningActive = false;
-    private static long scheduledStopDeadlineMs = 0L;
 
     private GMSounds() {}
 
@@ -41,33 +38,13 @@ public final class GMSounds {
                 client.getSoundManager().stop(currentPlayingInstance);
                 currentPlayingInstance = null;
             }
-            scheduledStopDeadlineMs = 0L;
             SimpleSoundInstance instance = SimpleSoundInstance.forUI(sound, pitch, volume);
             currentPlayingInstance = instance;
-            currentSoundStartTimeMs = System.currentTimeMillis();
-            isWarningActive = (sound == ETCS_WARNING);
             client.getSoundManager().play(instance);
         } catch (Throwable t) {
             if (client.player != null) {
                 client.player.playSound(sound, volume, pitch);
             }
-        }
-    }
-
-    public static void requestGracefulWarningStop() {
-        if (!isWarningActive || scheduledStopDeadlineMs > 0L) return;
-        long elapsed = System.currentTimeMillis() - currentSoundStartTimeMs;
-        long cycleMs = 450L;
-        long remaining = cycleMs - (elapsed % cycleMs);
-        if (remaining < 30L) {
-            remaining += cycleMs;
-        }
-        scheduledStopDeadlineMs = System.currentTimeMillis() + remaining;
-    }
-
-    public static void tick(Minecraft client) {
-        if (scheduledStopDeadlineMs > 0L && System.currentTimeMillis() >= scheduledStopDeadlineMs) {
-            stopCurrentSound(client);
         }
     }
 
@@ -78,11 +55,5 @@ public final class GMSounds {
             } catch (Throwable ignored) {}
             currentPlayingInstance = null;
         }
-        scheduledStopDeadlineMs = 0L;
-        isWarningActive = false;
-    }
-
-    public static boolean isWarningActive() {
-        return isWarningActive;
     }
 }
