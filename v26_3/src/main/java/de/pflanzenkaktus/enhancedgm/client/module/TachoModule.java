@@ -237,12 +237,19 @@ public class TachoModule implements ClientFeatureModule {
         String clean = COLOR_STRIP_PATTERN.matcher(text).replaceAll("").toLowerCase(java.util.Locale.ROOT).trim();
         return clean.contains("km/h")
             || clean.contains("gang:")
-            || clean.contains("höhe:")
-            || clean.contains("hoehe:")
+            || clean.contains("höhe")
+            || clean.contains("hoehe")
             || clean.contains("motor")
             || clean.contains("tank")
             || clean.contains("fahrzeug")
             || clean.contains("geschwindigkeit");
+    }
+
+    public static boolean isAircraftBossBarText(String text) {
+        if (text == null || text.isBlank()) return false;
+        String clean = COLOR_STRIP_PATTERN.matcher(text).replaceAll("").toLowerCase(java.util.Locale.ROOT).trim();
+        return clean.contains("höhe") || clean.contains("hoehe") || clean.contains("ft")
+            || clean.contains("heli") || clean.contains("rotor") || clean.contains("altitude");
     }
 
     public static boolean isMotorOffText(String text) {
@@ -851,6 +858,9 @@ public class TachoModule implements ClientFeatureModule {
                                 if (isVehicleBossBarText(text)) {
                                     foundVehicleBar = true;
                                     this.lastVehicleBossBarTimestampMs = System.currentTimeMillis();
+                                }
+                                if (isAircraftBossBarText(text)) {
+                                    addon.getBlitzerTracker().setAircraft(true);
                                 }
                                 if (isMotorOffText(text)) {
                                     if (addon.getConfig().autoMotorStart && !hasAttemptedMotorStart && pendingMotorStartTicks < 0 && !isNonMotorVehicleEntity(client)) {

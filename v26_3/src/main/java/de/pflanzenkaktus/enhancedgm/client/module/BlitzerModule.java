@@ -205,6 +205,9 @@ public class BlitzerModule implements ClientFeatureModule {
             if (cfg.blitzerOnlyInVehicle && (mc.player == null || (!mc.player.isPassenger() && mc.player.getVehicle() == null))) {
                 return;
             }
+            if (addon.getBlitzerTracker().isAircraft()) {
+                return;
+            }
             addon.getHudRenderer().render3dWorldBlitzerMarkers(graphics, mc, partialTick);
         }
     }

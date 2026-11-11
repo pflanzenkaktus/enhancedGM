@@ -70,7 +70,7 @@ public class AddonConfig {
     public double directionConeDegrees = 75.0;
     public double minSpeedBlocksPerSec = 1.5;
     public boolean playWarningSound = true;
-    public String blitzerSoundType = "ETCS";
+    public String blitzerSoundType = "MINECRAFT";
     public int blitzerSoundVolume = 65;
     public boolean render3dWorldMarkers = true;
 

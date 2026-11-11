@@ -286,8 +286,9 @@ public class BlitzerWarningTracker {
         String lower = clean.toLowerCase(Locale.ROOT);
         onChatMessageForTempomat(clean);
 
-        // Aircraft telemetry detection (e.g. "Höhe: 370 ft")
-        if (lower.contains("höhe:") || lower.contains("hoehe:") || lower.contains("ft")) {
+        // Aircraft telemetry detection (e.g. "Höhe: 370 ft", "Höhe: 50m", "Höhe", "Hoehe", etc.)
+        if (lower.contains("höhe") || lower.contains("hoehe") || lower.contains("ft")
+            || lower.contains("heli") || lower.contains("rotor") || lower.contains("altitude")) {
             this.isAircraft = true;
         }
 
@@ -483,7 +484,7 @@ public class BlitzerWarningTracker {
             }
         }
 
-        if (config.blitzerOnlyInVehicle && !inVehicle) {
+        if ((config.blitzerOnlyInVehicle && !inVehicle) || isAircraft) {
             this.currentAlert = null;
             this.lastSoundAlertCameraId = null;
             this.lastSoundTypePlayed = AlertSound.NONE;
