@@ -10,21 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.2] - 2026-11-11
 
 ### Added
-- **Moderne Warntöne für Blitzer (ETCS-Modus)**:
-  - Neues Warnprofil im Menü wählbar: `ETCS` (Standard), `Minecraft` (klassisches Pling) oder `Aus`.
-  - Bei normaler Fahrt im Tempolimit ertönt ein dezenter Info-Ton bei Annäherung.
-  - Bei Tempoüberschreitung warnt ein Signalton, der im Nahbereich zur Bremsaufforderung dringlicher wird.
-  - Dynamischer Vorwarnradius: Schlägt bei überhöhter Geschwindigkeit automatisch 25 Meter früher an, um rechtzeitiges Abbremsen zu ermöglichen.
-  - Direkter Vorrang: Beschleunigen über das Tempolimit unterbricht Info-Töne sofort zugunsten des Warntons.
-- **Lautstärkeregler für Warntöne**:
-  - Neuer Schieberegler von 0% bis 100% in den Blitzer-Einstellungen (Standard auf angenehme 65% voreingestellt).
-- **Strukturierte Einstellungen**:
-  - Neue übersichtliche Unterkategorien für Debug- und Blitzer-Einstellungen.
+- **Modern Speed Camera Warning Audio (ETCS Mode)**:
+  - Selectable warning audio profile in settings: `ETCS` (Default), `Minecraft` (classic pling chime), or `Off`.
+  - While driving within the speed limit, a subtle info chime plays once upon approaching a camera.
+  - When exceeding the speed limit, an overspeed alert triggers and escalates to an urgent brake warning when approaching closely.
+  - Dynamic Early Alert Radius: Automatically extends detection 25 meters further ahead when overspeeding, giving drivers more time to brake.
+  - Instant Cut-In: Accelerating over the speed limit immediately replaces an info chime with the overspeed alert.
+  - Natural Decay: Warning signals play out with their smooth original decay tail instead of harsh buffer cut-offs.
+- **Speed Camera Alert Volume Slider**:
+  - Full volume control slider from 0% to 100% in speed camera settings (comfortably pre-set to 65% default).
+- **Structured Settings Categories**:
+  - Organized subcategories for Debug and Speed Camera settings.
 
 ### Fixed
-- **Fahrzeug-Automation vom Tacho-HUD entkoppelt**:
-  - Automatischer Motorstart (`/vehicles motor`) und automatisches Gangeinlegen (`Gang: D`) funktionieren nun auch dann zuverlässig, wenn das Tacho-HUD-Widget in den Einstellungen oder im HUD-Editor deaktiviert ist.
-  - Das Modul bleibt für die Hintergrund-Fahrzeuglogik aktiv und blendet lediglich die optische Anzeige aus.
+- **Decoupled Vehicle Automation from Speedometer HUD**:
+  - Automatic engine startup (`/vehicles motor`) and automatic gear engagement (`Gear: D`) now continue to work reliably even when the speedometer HUD widget is disabled in settings or the HUD editor.
+  - The module remains active for background vehicle logic while suppressing widget rendering when disabled.
 
 ## [0.4.1] - 2026-11-10
 
