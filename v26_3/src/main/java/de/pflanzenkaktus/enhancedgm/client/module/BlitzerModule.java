@@ -162,12 +162,36 @@ public class BlitzerModule implements ClientFeatureModule {
     @Override
     public void onClientTick(GMAddonClient addon, Minecraft client) {
         if (client.player == null) return;
-        if (addon.getBlitzerTracker().consumePendingWarningSound()) {
-            client.player.playSound(
-                SoundEvents.NOTE_BLOCK_PLING.value(),
-                1.0f,
-                addon.getBlitzerTracker().getPendingWarningSoundPitch()
-            );
+        BlitzerWarningTracker tracker = addon.getBlitzerTracker();
+        if (tracker.hasPendingAlertSound()) {
+            BlitzerWarningTracker.AlertSound sound = tracker.consumePendingAlertSound();
+            AddonConfig cfg = addon.getConfig();
+            if (!cfg.playWarningSound || "OFF".equalsIgnoreCase(cfg.blitzerSoundType)) {
+                return;
+            }
+            float volume = Math.clamp(cfg.blitzerSoundVolume / 100.0f, 0.0f, 1.0f);
+            if (volume <= 0.001f) {
+                return;
+            }
+
+            if ("ETCS".equalsIgnoreCase(cfg.blitzerSoundType)) {
+                net.minecraft.sounds.SoundEvent soundEvent = switch (sound) {
+                    case INFO -> de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.ETCS_INFO;
+                    case TOO_FAST -> de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.ETCS_TOOFAST;
+                    case WARNING_CRITICAL -> de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.ETCS_WARNING;
+                    default -> null;
+                };
+                if (soundEvent != null) {
+                    client.player.playSound(soundEvent, volume, 1.0f);
+                }
+            } else {
+                float pitch = (sound == BlitzerWarningTracker.AlertSound.INFO) ? 1.15f : 1.50f;
+                client.player.playSound(
+                    SoundEvents.NOTE_BLOCK_PLING.value(),
+                    volume,
+                    pitch
+                );
+            }
         }
     }
 
@@ -257,13 +281,29 @@ public class BlitzerModule implements ClientFeatureModule {
                     addon.saveConfig();
                 }
             ),
-            new Setting.BooleanSetting(
-                "blitzer_sound",
+            new Setting.CycleSetting(
+                "blitzer_sound_type",
                 I18n.get("gm-addon.setting.blitzer.sound_warning"),
                 I18n.get("gm-addon.setting.blitzer.sound_warning.desc"),
-                () -> cfg.playWarningSound,
+                List.of("ETCS", "MINECRAFT", "OFF"),
+                () -> {
+                    if (!cfg.playWarningSound) return "OFF";
+                    return (cfg.blitzerSoundType != null && !cfg.blitzerSoundType.isBlank()) ? cfg.blitzerSoundType.toUpperCase(java.util.Locale.ROOT) : "ETCS";
+                },
                 val -> {
-                    cfg.playWarningSound = val;
+                    cfg.blitzerSoundType = val;
+                    cfg.playWarningSound = !"OFF".equalsIgnoreCase(val);
+                    addon.saveConfig();
+                }
+            ),
+            new Setting.IntSliderSetting(
+                "blitzer_sound_volume",
+                I18n.get("gm-addon.setting.blitzer.sound_volume"),
+                I18n.get("gm-addon.setting.blitzer.sound_volume.desc"),
+                0, 100, "%",
+                () -> cfg.blitzerSoundVolume,
+                val -> {
+                    cfg.blitzerSoundVolume = Math.clamp(val, 0, 100);
                     addon.saveConfig();
                 }
             ),

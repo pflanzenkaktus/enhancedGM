@@ -212,7 +212,7 @@ public class TachoModule implements ClientFeatureModule {
 
     @Override
     public boolean isEnabled() {
-        return addon.getConfig().tachoEnabled;
+        return true;
     }
 
     @Override
@@ -898,6 +898,9 @@ public class TachoModule implements ClientFeatureModule {
 
     @Override
     public void renderHudWidget(GMAddonClient addon, GuiGraphicsExtractor graphics, Minecraft mc, float partialTick, boolean editorPreview) {
+        if (!editorPreview && !addon.getConfig().tachoEnabled) {
+            return;
+        }
         addon.getHudRenderer().renderTachoWidget(graphics, mc, partialTick, editorPreview);
     }
 

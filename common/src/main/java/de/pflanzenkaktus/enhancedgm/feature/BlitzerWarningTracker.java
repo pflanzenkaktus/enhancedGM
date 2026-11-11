@@ -59,6 +59,13 @@ public class BlitzerWarningTracker {
         OVER_SPEED_LIMIT
     }
 
+    public enum AlertSound {
+        NONE,
+        INFO,
+        TOO_FAST,
+        WARNING_CRITICAL
+    }
+
     public record BlitzerAlert(
         SpeedCamera camera,
         double distanceBlocks,
@@ -91,7 +98,9 @@ public class BlitzerWarningTracker {
     private BlitzerAlert currentAlert = null;
     private String lastSoundAlertCameraId = null;
     private long lastSoundAlertTimeMs = 0L;
+    private AlertSound lastSoundTypePlayed = AlertSound.NONE;
     private boolean pendingWarningSound = false;
+    private AlertSound pendingAlertSound = AlertSound.NONE;
     private float pendingWarningSoundPitch = 1.0f;
 
     public BlitzerWarningTracker(AddonConfig config) {
@@ -477,7 +486,9 @@ public class BlitzerWarningTracker {
         if (config.blitzerOnlyInVehicle && !inVehicle) {
             this.currentAlert = null;
             this.lastSoundAlertCameraId = null;
+            this.lastSoundTypePlayed = AlertSound.NONE;
             this.pendingWarningSound = false;
+            this.pendingAlertSound = AlertSound.NONE;
             return;
         }
 
@@ -500,20 +511,35 @@ public class BlitzerWarningTracker {
 
         this.currentAlert = bestAlert.orElse(null);
 
-        if (this.currentAlert != null && config.playWarningSound) {
+        if (this.currentAlert != null && config.playWarningSound && !"OFF".equalsIgnoreCase(config.blitzerSoundType)) {
             String camId = this.currentAlert.camera().id();
             boolean isNewCamera = !camId.equals(lastSoundAlertCameraId);
-            boolean urgentRepeat = (this.currentAlert.urgency() == Urgency.OVER_SPEED_LIMIT)
-                && (now - lastSoundAlertTimeMs > 2200L);
+            boolean isOverLimit = (this.currentAlert.urgency() == Urgency.OVER_SPEED_LIMIT);
+            boolean isUrgentDist = (this.currentAlert.distanceBlocks() <= config.urgentDistanceBlocks);
 
-            if (isNewCamera || urgentRepeat) {
+            AlertSound desiredSound;
+            if (!isOverLimit) {
+                desiredSound = AlertSound.INFO;
+            } else if (isUrgentDist) {
+                desiredSound = AlertSound.WARNING_CRITICAL;
+            } else {
+                desiredSound = AlertSound.TOO_FAST;
+            }
+
+            boolean escalated = isOverLimit && (lastSoundTypePlayed == AlertSound.INFO || (desiredSound == AlertSound.WARNING_CRITICAL && lastSoundTypePlayed == AlertSound.TOO_FAST));
+            boolean urgentRepeat = isOverLimit && (now - lastSoundAlertTimeMs > 2200L);
+
+            if (isNewCamera || escalated || urgentRepeat) {
+                pendingAlertSound = desiredSound;
                 pendingWarningSound = true;
-                pendingWarningSoundPitch = (this.currentAlert.urgency() == Urgency.OVER_SPEED_LIMIT) ? 1.5f : 1.15f;
+                pendingWarningSoundPitch = isOverLimit ? 1.5f : 1.15f;
                 lastSoundAlertCameraId = camId;
                 lastSoundAlertTimeMs = now;
+                lastSoundTypePlayed = desiredSound;
             }
         } else if (this.currentAlert == null) {
             lastSoundAlertCameraId = null;
+            lastSoundTypePlayed = AlertSound.NONE;
         }
     }
 
@@ -574,9 +600,21 @@ public class BlitzerWarningTracker {
         return currentAlert;
     }
 
+    public boolean hasPendingAlertSound() {
+        return pendingAlertSound != AlertSound.NONE || pendingWarningSound;
+    }
+
+    public AlertSound consumePendingAlertSound() {
+        AlertSound s = pendingAlertSound;
+        pendingAlertSound = AlertSound.NONE;
+        pendingWarningSound = false;
+        return s;
+    }
+
     public boolean consumePendingWarningSound() {
-        if (pendingWarningSound) {
+        if (pendingWarningSound || pendingAlertSound != AlertSound.NONE) {
             pendingWarningSound = false;
+            pendingAlertSound = AlertSound.NONE;
             return true;
         }
         return false;

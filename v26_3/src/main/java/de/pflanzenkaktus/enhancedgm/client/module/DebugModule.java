@@ -61,7 +61,8 @@ public class DebugModule implements ClientFeatureModule {
                 val -> {
                     cfg.forceEnableEverywhere = val;
                     addon.saveConfig();
-                }
+                },
+                "server"
             ),
             new Setting.StringSetting(
                 "server_domain_pattern",
@@ -71,7 +72,8 @@ public class DebugModule implements ClientFeatureModule {
                 val -> {
                     cfg.serverDomainPattern = val;
                     addon.saveConfig();
-                }
+                },
+                "server"
             ),
 
             // Simulationen & Test-Trigger
@@ -83,7 +85,8 @@ public class DebugModule implements ClientFeatureModule {
                 () -> addon.getSpawnProtectionTracker().startTimer(
                     cfg.spawnProtectionSeconds,
                     I18n.get("gm-addon.setting.spawn_protection.test_label")
-                )
+                ),
+                "spawnschutz"
             ),
             new Setting.ActionSetting(
                 "plot_test_reminder",
@@ -94,7 +97,8 @@ public class DebugModule implements ClientFeatureModule {
                     if (plotMod != null) {
                         plotMod.sendReminder(Minecraft.getInstance(), true);
                     }
-                }
+                },
+                "plots"
             ),
             new Setting.ActionSetting(
                 "plot_simulate",
@@ -105,7 +109,8 @@ public class DebugModule implements ClientFeatureModule {
                     if (plotMod != null) {
                         plotMod.simulateTestExpiry();
                     }
-                }
+                },
+                "plots"
             ),
             new Setting.ActionSetting(
                 "plot_reset_test",
@@ -116,7 +121,8 @@ public class DebugModule implements ClientFeatureModule {
                     if (plotMod != null) {
                         plotMod.resetTestExpiry();
                     }
-                }
+                },
+                "plots"
             ),
 
             // Kalibrierung & Erweiterte Parameter
@@ -129,7 +135,8 @@ public class DebugModule implements ClientFeatureModule {
                 val -> {
                     cfg.speedCalibrationFactor = val;
                     addon.saveConfig();
-                }
+                },
+                "blitzer"
             ),
             new Setting.DoubleSliderSetting(
                 "blitzer_dedupe_radius",
@@ -140,7 +147,8 @@ public class DebugModule implements ClientFeatureModule {
                 val -> {
                     cfg.blitzerDedupeRadiusBlocks = val;
                     addon.saveConfig();
-                }
+                },
+                "blitzer"
             ),
             new Setting.IntSliderSetting(
                 "plot_radius",
@@ -151,7 +159,8 @@ public class DebugModule implements ClientFeatureModule {
                 val -> {
                     cfg.plotMatchRadiusBlocks = val;
                     addon.saveConfig();
-                }
+                },
+                "plots"
             ),
 
             // Cache & BlueMap
@@ -164,7 +173,8 @@ public class DebugModule implements ClientFeatureModule {
                 val -> {
                     cfg.tileCacheTtlMinutes = val;
                     addon.saveConfig();
-                }
+                },
+                "bluemap"
             ),
             new Setting.ActionSetting(
                 "refresh_now",
@@ -174,7 +184,8 @@ public class DebugModule implements ClientFeatureModule {
                 () -> {
                     addon.getTextureCache().clearGpuCache();
                     addon.getMarkerClient().refreshAsync();
-                }
+                },
+                "bluemap"
             ),
             new Setting.ActionSetting(
                 "check_updates_now",
@@ -187,7 +198,8 @@ public class DebugModule implements ClientFeatureModule {
                         mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§7[enhancedGM] Prüfe auf GitHub nach Updates..."));
                     }
                     addon.getUpdateChecker().checkForUpdatesAsync(true);
-                }
+                },
+                "updates"
             ),
             new Setting.ActionSetting(
                 "install_update_now",
@@ -238,7 +250,8 @@ public class DebugModule implements ClientFeatureModule {
                             });
                         }
                     );
-                }
+                },
+                "updates"
             )
         );
     }

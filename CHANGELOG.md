@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.2] - 2026-11-11
+
+### Added
+- **Configurable Speed Camera Alert Sounds (ETCS Cab Signaling)**:
+  - Added acoustic alert profile selection in the Blitzer settings menu (`ETCS`, `Minecraft`, `Aus`).
+  - Integrated official ETCS Driver Machine Interface audio signals:
+    - `S_info` (single chime): Played once upon approaching a speed camera while driving within the permitted speed limit.
+    - `S1_toofast` (overspeed alert): Triggered when approaching a camera while exceeding the speed limit.
+    - `S2_warning` (urgent warning): Triggered at acute/urgent distance when speeding to prompt immediate braking.
+  - Sourced from official European Union Agency for Railways (ERA) specification `ERA_ERTMS_015560`.
+- **Speed Camera Sound Volume Slider**:
+  - Added a dedicated 0% to 100% volume control slider for speed camera alert sounds.
+- **Settings Subcategories**:
+  - Organized settings in the Debug and Blitzer categories with structured subcategory sections.
+
+### Fixed
+- **Decoupled Vehicle Automation from Speedometer HUD**:
+  - Automatic engine start and automatic gear shifting (Gang D) now continue to work reliably even when the speedometer HUD widget is disabled in the settings or HUD editor.
+  - The speedometer module remains active for background vehicle logic while suppressing widget rendering when disabled.
+
 ## [0.4.1] - 2026-11-10
 
 ### Added

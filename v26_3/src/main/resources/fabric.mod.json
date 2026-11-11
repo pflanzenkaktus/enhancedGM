@@ -29,5 +29,8 @@
   },
   "suggests": {
     "modmenu": "*"
+  },
+  "custom": {
+    "credits": "ETCS cab signaling acoustic audio samples sourced from European Union Agency for Railways (ERA) specification ERA_ERTMS_015560."
   }
 }

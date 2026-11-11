@@ -19,8 +19,10 @@ import net.minecraft.network.chat.FontDescription;
 import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Modern Settings Screen for enhancedGM.
@@ -95,6 +97,7 @@ public class GMSettingsScreen extends Screen {
     private final Screen parentScreen;
 
     private int selectedModuleIndex = 0;
+    private String selectedSubcategory = "all";
     private String searchQuery = "";
     private double scrollOffset = 0.0;
     private double maxScroll = 0.0;
@@ -194,12 +197,47 @@ public class GMSettingsScreen extends Screen {
         this.mainY = this.winY + 34;
         this.mainH = this.winH - 44;
 
-        this.gridY = this.mainY + 34;
-        this.gridH = this.mainH - 72; // Bottom 34px reserved for hover detail bar
-
         List<ClientFeatureModule> modules = addon.getModuleManager().getModules();
         if (selectedModuleIndex >= modules.size()) {
             selectedModuleIndex = 0;
+        }
+
+        ClientFeatureModule currentMod = (selectedModuleIndex < modules.size()) ? modules.get(selectedModuleIndex) : null;
+        List<String> availableSubcategories = new ArrayList<>();
+        if (currentMod != null && (searchQuery == null || searchQuery.isBlank())) {
+            Set<String> subcats = new LinkedHashSet<>();
+            for (Setting<?> s : currentMod.getSettings()) {
+                if (s.subcategory() != null && !s.subcategory().isBlank()) {
+                    subcats.add(s.subcategory());
+                }
+            }
+            if (subcats.size() > 1) {
+                availableSubcategories.add("all");
+                availableSubcategories.addAll(subcats);
+            }
+        }
+
+        int subcatBarH = 0;
+        if (!availableSubcategories.isEmpty()) {
+            int curX = this.mainX + 6;
+            int rowCount = 1;
+            for (String subcat : availableSubcategories) {
+                String labelKey = "gm-addon.subcategory." + subcat.toLowerCase(Locale.ROOT);
+                String labelText = I18n.has(labelKey) ? I18n.get(labelKey) : subcat;
+                Component labelComp = uText(labelText);
+                int pillW = Math.max(34, this.font.width(labelComp) + 12);
+                if (curX + pillW > this.mainX + this.mainW - 6 && curX > this.mainX + 6) {
+                    rowCount++;
+                    curX = this.mainX + 6;
+                }
+                curX += pillW + 4;
+            }
+            subcatBarH = (rowCount == 1) ? 22 : (rowCount * 20 + 2);
+            this.gridY = this.mainY + 32 + subcatBarH;
+            this.gridH = this.mainH - (32 + subcatBarH) - 38;
+        } else {
+            this.gridY = this.mainY + 34;
+            this.gridH = this.mainH - 72; // Bottom 34px reserved for hover detail bar
         }
 
         // Top Header Actions - Modern Blue Pill & Secondary Pill Buttons with 12x12 HD Icons
@@ -253,6 +291,7 @@ public class GMSettingsScreen extends Screen {
                 mod.getId(),
                 btn -> {
                     this.selectedModuleIndex = idx;
+                    this.selectedSubcategory = "all";
                     if (this.searchBox != null) {
                         this.searchBox.setValue("");
                     }
@@ -296,6 +335,35 @@ public class GMSettingsScreen extends Screen {
             },
             false
         ));
+
+        if (!availableSubcategories.isEmpty()) {
+            int pillX = this.mainX + 6;
+            int pillY = this.mainY + 31;
+            int pillH = 17;
+            for (String subcat : availableSubcategories) {
+                boolean isSelected = subcat.equalsIgnoreCase(this.selectedSubcategory);
+                String labelKey = "gm-addon.subcategory." + subcat.toLowerCase(Locale.ROOT);
+                String labelText = I18n.has(labelKey) ? I18n.get(labelKey) : subcat;
+                Component labelComp = uText(labelText);
+                int pillW = Math.max(34, this.font.width(labelComp) + 12);
+
+                if (pillX + pillW > this.mainX + this.mainW - 6 && pillX > this.mainX + 6) {
+                    pillX = this.mainX + 6;
+                    pillY += 20;
+                }
+
+                addRenderableWidget(new ModernGlassButton(
+                    pillX, pillY, pillW, pillH, labelComp,
+                    btn -> {
+                        this.selectedSubcategory = subcat;
+                        this.scrollOffset = 0.0;
+                        init(this.width, this.height);
+                    },
+                    isSelected
+                ));
+                pillX += pillW + 4;
+            }
+        }
 
         rebuildSettingRows();
     }
@@ -366,6 +434,11 @@ public class GMSettingsScreen extends Screen {
         } else if (selectedModuleIndex < modules.size()) {
             ClientFeatureModule mod = modules.get(selectedModuleIndex);
             for (Setting<?> s : mod.getSettings()) {
+                if (selectedSubcategory != null && !selectedSubcategory.equals("all") && !selectedSubcategory.isBlank()) {
+                    if (!selectedSubcategory.equalsIgnoreCase(s.subcategory())) {
+                        continue;
+                    }
+                }
                 result.add(new SettingEntry(s, mod.getId(), mod.getDisplayName()));
             }
         }

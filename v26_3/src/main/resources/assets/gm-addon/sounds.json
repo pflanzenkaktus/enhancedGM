@@ -1,0 +1,20 @@
+{
+  "etcs.info": {
+    "subtitle": "subtitles.gm-addon.etcs.info",
+    "sounds": [
+      "gm-addon:etcs/s_info"
+    ]
+  },
+  "etcs.toofast": {
+    "subtitle": "subtitles.gm-addon.etcs.toofast",
+    "sounds": [
+      "gm-addon:etcs/s1_toofast"
+    ]
+  },
+  "etcs.warning": {
+    "subtitle": "subtitles.gm-addon.etcs.warning",
+    "sounds": [
+      "gm-addon:etcs/s2_warning"
+    ]
+  }
+}

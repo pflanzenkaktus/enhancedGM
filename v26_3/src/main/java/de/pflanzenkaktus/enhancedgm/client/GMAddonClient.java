@@ -98,6 +98,8 @@ public class GMAddonClient implements ClientModInitializer {
     public void onInitializeClient() {
         instance = this;
 
+        de.pflanzenkaktus.enhancedgm.client.sound.GMSounds.init();
+
         this.configDir = FabricLoader.getInstance().getConfigDir().resolve("gm-addon");
         this.configFile = configDir.resolve("config.json");
         this.config = AddonConfig.load(configFile);
@@ -123,7 +125,7 @@ public class GMAddonClient implements ClientModInitializer {
 
         String currentVersion = FabricLoader.getInstance().getModContainer("gm-addon")
             .map(c -> c.getMetadata().getVersion().getFriendlyString())
-            .orElse("0.4.1");
+            .orElse("0.4.2");
 
         this.updateChecker = new UpdateChecker(config, currentVersion);
         this.updateChecker.setOnUpdateFoundListener(release -> {
