@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.3] - 2026-11-22
+
+### Added
+- **Surface-Only Farmwelt Minimap & Fullscreen Map**:
+  - Automatically switches from the GermanMiner BlueMap to a fair, surface-only local terrain map when entering the Farmwelt (`minecraft:farmwelt`), non-Overworld dimensions, or non-GermanMiner worlds.
+  - Uses `Heightmap.Types.WORLD_SURFACE` and `MapColor` with subtle water depth shading and north-slope relief; never scans underground or exposes caves, ores, entities, or players.
+  - Automatically hides city BlueMap POIs, city speed camera markers, 3D speed camera markers, and speed camera alerts while in the Farmwelt.
+  - New **Map Mode** setting (`Auto`, `BlueMap`, `Surface` / `Farmwelt`) in Minimap settings.
+- **Extended Protection Timer Formatting**:
+  - Displays remaining times of 60 seconds or more in `M:SS` format (e.g. `1:59`) on the Spawn Protection HUD widget.
+
+### Changed
+- **License Switched to GNU AGPL-3.0 (`AGPL-3.0-only`)**:
+  - Replaced `LICENSE` with the verbatim GNU Affero General Public License v3.0 text, updated `fabric.mod.json` and READMEs, bundled `LICENSE` directly into built JARs, and kept third-party ERA ETCS audio samples explicitly separated.
+
+### Fixed
+- **Smooth Sub-Pixel Minimap & Fullscreen Map Rendering**:
+  - Interpolated player coordinates via `player.getPosition(partialTick)` instead of 20 TPS `getX()`/`getZ()`, eliminating discrete block-stepping while moving.
+  - Replaced per-tile integer floor rounding and `+1` overlap with a shared floating-point pose matrix transform, eliminating tile seam tearing and clipping while rotating or moving.
+  - Increased minimap rotation coverage radius (`0.85x`) to prevent corner clipping and kept crisp `NEAREST` + `CLAMP_TO_EDGE` texture sampling for both BlueMap and Farmwelt terrain.
+- **Hospital Death & Revive 2-Minute Protection Timer**:
+  - Fixed `SpawnProtectionTracker` rejecting official GermanMiner system messages starting with `»` or timestamps (`[HH:MM:SS] » ℹ`).
+  - Reliably triggers the 120-second `Krankenhaus-Schutz` countdown on hospital transport and paid revive messages, automatically cancels on `"Du bist nun nicht mehr im PVP-Schutz."`, and prevents shorter default respawn timers from overwriting an active longer protection timer.
+- **Off-Thread GPU Texture Cleanup on Disconnect**:
+  - Marshaled `LocalTerrainMapCache.clear()` onto the Render Thread to prevent `IllegalStateException: Rendersystem called from wrong thread` when disconnecting from a server.
+
 ## [0.4.2] - 2026-11-11
 
 ### Added

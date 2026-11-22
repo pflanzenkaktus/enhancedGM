@@ -57,6 +57,7 @@ java {
 
 jar {
     from(project(':common').sourceSets.main.output)
+    from(rootProject.file("LICENSE"))
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 

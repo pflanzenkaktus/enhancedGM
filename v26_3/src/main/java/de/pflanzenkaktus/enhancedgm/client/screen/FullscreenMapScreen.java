@@ -2,6 +2,7 @@ package de.pflanzenkaktus.enhancedgm.client.screen;
 
 import de.pflanzenkaktus.enhancedgm.client.GMAddonClient;
 import de.pflanzenkaktus.enhancedgm.client.map.BlueMapTextureCache;
+import de.pflanzenkaktus.enhancedgm.client.map.LocalTerrainMapCache;
 import de.pflanzenkaktus.enhancedgm.client.util.I18n;
 import de.pflanzenkaktus.enhancedgm.config.AddonConfig;
 import de.pflanzenkaktus.enhancedgm.map.BlueMapTileClient;
@@ -12,6 +13,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -152,9 +154,13 @@ public class FullscreenMapScreen extends Screen {
             GMSettingsScreen.uText(I18n.get("gm-addon.common.reload")),
             GMSettingsScreen.ICON_RESET,
             btn -> {
-                addon.getTextureCache().clearGpuCache();
-                addon.getMarkerClient().refreshAsync();
-                addon.getCameraRepository().syncWithFirebaseAsync();
+                if (addon.shouldUseSurfaceMinimap()) {
+                    addon.getLocalTerrainMapCache().clear();
+                } else {
+                    addon.getTextureCache().clearGpuCache();
+                    addon.getMarkerClient().refreshAsync();
+                    addon.getCameraRepository().syncWithFirebaseAsync();
+                }
             },
             false
         ));
@@ -248,9 +254,10 @@ public class FullscreenMapScreen extends Screen {
         lastMouseY = mouseY;
 
         Minecraft mc = Minecraft.getInstance();
-        if (followPlayer && mc.player != null) {
-            centerWorldX = mc.player.getX();
-            centerWorldZ = mc.player.getZ();
+        Vec3 smoothPlayerPos = mc.player != null ? mc.player.getPosition(partialTick) : null;
+        if (followPlayer && smoothPlayerPos != null) {
+            centerWorldX = smoothPlayerPos.x;
+            centerWorldZ = smoothPlayerPos.z;
         }
 
         int mapTop = TOP_BAR_HEIGHT;
@@ -263,89 +270,126 @@ public class FullscreenMapScreen extends Screen {
         graphics.fill(0, 0, this.width, this.height, 0xFF090D16);
         graphics.enableScissor(0, mapTop, this.width, mapBottom);
 
-        int lod = pixelsPerBlock < 0.18 ? 2 : 1;
-        int blocksPerTile = BlueMapTileClient.blocksPerTile(lod);
-
         double halfBlocksW = (mapWidth * 0.5) / pixelsPerBlock;
         double halfBlocksH = (mapHeight * 0.5) / pixelsPerBlock;
 
-        int minTileX = BlueMapTileClient.blockToTileCoord(centerWorldX - halfBlocksW, lod);
-        int maxTileX = BlueMapTileClient.blockToTileCoord(centerWorldX + halfBlocksW, lod);
-        int minTileZ = BlueMapTileClient.blockToTileCoord(centerWorldZ - halfBlocksH, lod);
-        int maxTileZ = BlueMapTileClient.blockToTileCoord(centerWorldZ + halfBlocksH, lod);
-
-        BlueMapTextureCache texCache = addon.getTextureCache();
-        for (int tx = minTileX; tx <= maxTileX; tx++) {
-            for (int tz = minTileZ; tz <= maxTileZ; tz++) {
-                double tileOriginX = (double) tx * blocksPerTile;
-                double tileOriginZ = (double) tz * blocksPerTile;
-
-                int drawX = screenCenterX + (int) Math.floor((tileOriginX - centerWorldX) * pixelsPerBlock);
-                int drawY = screenCenterY + (int) Math.floor((tileOriginZ - centerWorldZ) * pixelsPerBlock);
-                int drawW = (int) Math.ceil(blocksPerTile * pixelsPerBlock) + 1;
-                int drawH = (int) Math.ceil(blocksPerTile * pixelsPerBlock) + 1;
-
-                BlueMapTileClient.TileKey key = new BlueMapTileClient.TileKey(lod, tx, tz);
-                if (!texCache.drawTile(graphics, key, drawX, drawY, drawW, drawH)) {
-                    graphics.fill(drawX, drawY, drawX + drawW, drawY + drawH, 0xFF111827);
-                    graphics.outline(drawX, drawY, drawW, drawH, 0xFF1E293B);
-                }
-            }
-        }
-
         AddonConfig cfg = addon.getConfig();
         List<Component> hoveredTooltip = null;
+        int lod = pixelsPerBlock < 0.18 ? 2 : 1;
+        boolean useSurfaceMap = mc.level != null && addon.shouldUseSurfaceMinimap();
 
-        // Render BlueMap live markers
-        if (cfg.showBlueMapMarkersOnMap) {
-            for (BlueMapMarker m : addon.getMarkerClient().getMarkers()) {
-                if (!cfg.enabledMarkerSets.contains(m.categoryId())) continue;
-                int mx = screenCenterX + (int) Math.round((m.x() - centerWorldX) * pixelsPerBlock);
-                int my = screenCenterY + (int) Math.round((m.z() - centerWorldZ) * pixelsPerBlock);
-                if (mx < -10 || mx > this.width + 10 || my < mapTop - 10 || my > mapBottom + 10) continue;
+        if (useSurfaceMap) {
+            int regionBlocks = LocalTerrainMapCache.REGION_BLOCKS;
+            int minRegX = LocalTerrainMapCache.blockToRegionCoord(centerWorldX - halfBlocksW);
+            int maxRegX = LocalTerrainMapCache.blockToRegionCoord(centerWorldX + halfBlocksW);
+            int minRegZ = LocalTerrainMapCache.blockToRegionCoord(centerWorldZ - halfBlocksH);
+            int maxRegZ = LocalTerrainMapCache.blockToRegionCoord(centerWorldZ + halfBlocksH);
 
-                graphics.fill(mx - 3, my - 3, mx + 4, my + 4, 0xCC090D16);
-                graphics.fill(mx - 2, my - 2, mx + 3, my + 3, m.colorArgb());
-
-                if (Math.abs(mouseX - mx) <= 5 && Math.abs(mouseY - my) <= 5) {
-                    hoveredTooltip = List.of(
-                        GMSettingsScreen.uText(m.categoryLabel() + ": " + m.label()),
-                        GMSettingsScreen.uText(String.format(Locale.ROOT, "X: %d | Y: %d | Z: %d",
-                            (int) Math.round(m.x()), (int) Math.round(m.y()), (int) Math.round(m.z())))
-                    );
-                }
-            }
-        }
-
-        // Render Speed Cameras ("Blitzer") using 128x128 HD circular speed sign texture
-        if (cfg.showSpeedCamerasOnMap) {
-            for (SpeedCamera cam : addon.getCameraRepository().getCameras()) {
-                int cx = screenCenterX + (int) Math.round((cam.x() - centerWorldX) * pixelsPerBlock);
-                int cy = screenCenterY + (int) Math.round((cam.z() - centerWorldZ) * pixelsPerBlock);
-                if (cx < -16 || cx > this.width + 16 || cy < mapTop - 16 || cy > mapBottom + 16) continue;
-
-                int signSize = 16;
-                GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SPEED_SIGN, cx - signSize / 2, cy - signSize / 2, signSize, signSize);
-                Component limComp = GMSettingsScreen.uText(Integer.toString(cam.effectiveSpeedLimit()));
-                GMSettingsScreen.drawCenteredFittedText(graphics, this.font, limComp, cx, cy - 4, 10, 0xFF0F172A, false);
-
-                if (Math.abs(mouseX - cx) <= 8 && Math.abs(mouseY - cy) <= 8) {
-                    hoveredTooltip = new ArrayList<>();
-                    hoveredTooltip.add(GMSettingsScreen.uText(I18n.get("gm-addon.screen.map.tooltip_camera", cam.name())));
-                    hoveredTooltip.add(GMSettingsScreen.uText(I18n.get("gm-addon.screen.map.tooltip_limit", cam.effectiveSpeedLimit())));
-                    hoveredTooltip.add(GMSettingsScreen.uText(String.format(Locale.ROOT, "Pos: %d, %d, %d",
-                        (int) Math.round(cam.x()), (int) Math.round(cam.y()), (int) Math.round(cam.z()))));
-                }
-            }
-        }
-
-        // Render Player marker using 128x128 bilinear-filtered HD cursor and Modern badge
-        if (mc.player != null) {
-            int px = screenCenterX + (int) Math.round((mc.player.getX() - centerWorldX) * pixelsPerBlock);
-            int py = screenCenterY + (int) Math.round((mc.player.getZ() - centerWorldZ) * pixelsPerBlock);
+            double baseOriginX = (double) minRegX * regionBlocks;
+            double baseOriginZ = (double) minRegZ * regionBlocks;
 
             graphics.pose().pushMatrix();
-            graphics.pose().translate(px, py);
+            graphics.pose().translate(screenCenterX, screenCenterY);
+            graphics.pose().scale((float) pixelsPerBlock, (float) pixelsPerBlock);
+            graphics.pose().translate((float) (baseOriginX - centerWorldX), (float) (baseOriginZ - centerWorldZ));
+
+            LocalTerrainMapCache terrainCache = addon.getLocalTerrainMapCache();
+            for (int rx = minRegX; rx <= maxRegX; rx++) {
+                for (int rz = minRegZ; rz <= maxRegZ; rz++) {
+                    int localX = (rx - minRegX) * regionBlocks;
+                    int localY = (rz - minRegZ) * regionBlocks;
+
+                    if (!terrainCache.drawRegion(graphics, rx, rz, localX, localY, regionBlocks, regionBlocks)) {
+                        graphics.fill(localX, localY, localX + regionBlocks, localY + regionBlocks, 0xFF111827);
+                        graphics.outline(localX, localY, regionBlocks, regionBlocks, 0xFF1E293B);
+                    }
+                }
+            }
+            graphics.pose().popMatrix();
+        } else {
+            int blocksPerTile = BlueMapTileClient.blocksPerTile(lod);
+
+            int minTileX = BlueMapTileClient.blockToTileCoord(centerWorldX - halfBlocksW, lod);
+            int maxTileX = BlueMapTileClient.blockToTileCoord(centerWorldX + halfBlocksW, lod);
+            int minTileZ = BlueMapTileClient.blockToTileCoord(centerWorldZ - halfBlocksH, lod);
+            int maxTileZ = BlueMapTileClient.blockToTileCoord(centerWorldZ + halfBlocksH, lod);
+
+            double baseOriginX = (double) minTileX * blocksPerTile;
+            double baseOriginZ = (double) minTileZ * blocksPerTile;
+
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(screenCenterX, screenCenterY);
+            graphics.pose().scale((float) pixelsPerBlock, (float) pixelsPerBlock);
+            graphics.pose().translate((float) (baseOriginX - centerWorldX), (float) (baseOriginZ - centerWorldZ));
+
+            BlueMapTextureCache texCache = addon.getTextureCache();
+            for (int tx = minTileX; tx <= maxTileX; tx++) {
+                for (int tz = minTileZ; tz <= maxTileZ; tz++) {
+                    int localX = (tx - minTileX) * blocksPerTile;
+                    int localY = (tz - minTileZ) * blocksPerTile;
+
+                    BlueMapTileClient.TileKey key = new BlueMapTileClient.TileKey(lod, tx, tz);
+                    if (!texCache.drawTile(graphics, key, localX, localY, blocksPerTile, blocksPerTile)) {
+                        graphics.fill(localX, localY, localX + blocksPerTile, localY + blocksPerTile, 0xFF111827);
+                        graphics.outline(localX, localY, blocksPerTile, blocksPerTile, 0xFF1E293B);
+                    }
+                }
+            }
+            graphics.pose().popMatrix();
+
+            // Render BlueMap live markers
+            if (cfg.showBlueMapMarkersOnMap) {
+                for (BlueMapMarker m : addon.getMarkerClient().getMarkers()) {
+                    if (!cfg.enabledMarkerSets.contains(m.categoryId())) continue;
+                    int mx = screenCenterX + (int) Math.round((m.x() - centerWorldX) * pixelsPerBlock);
+                    int my = screenCenterY + (int) Math.round((m.z() - centerWorldZ) * pixelsPerBlock);
+                    if (mx < -10 || mx > this.width + 10 || my < mapTop - 10 || my > mapBottom + 10) continue;
+
+                    graphics.fill(mx - 3, my - 3, mx + 4, my + 4, 0xCC090D16);
+                    graphics.fill(mx - 2, my - 2, mx + 3, my + 3, m.colorArgb());
+
+                    if (Math.abs(mouseX - mx) <= 5 && Math.abs(mouseY - my) <= 5) {
+                        hoveredTooltip = List.of(
+                            GMSettingsScreen.uText(m.categoryLabel() + ": " + m.label()),
+                            GMSettingsScreen.uText(String.format(Locale.ROOT, "X: %d | Y: %d | Z: %d",
+                                (int) Math.round(m.x()), (int) Math.round(m.y()), (int) Math.round(m.z())))
+                        );
+                    }
+                }
+            }
+
+            // Render Speed Cameras ("Blitzer") using circular speed sign texture
+            if (cfg.showSpeedCamerasOnMap) {
+                for (SpeedCamera cam : addon.getCameraRepository().getCameras()) {
+                    int cx = screenCenterX + (int) Math.round((cam.x() - centerWorldX) * pixelsPerBlock);
+                    int cy = screenCenterY + (int) Math.round((cam.z() - centerWorldZ) * pixelsPerBlock);
+                    if (cx < -16 || cx > this.width + 16 || cy < mapTop - 16 || cy > mapBottom + 16) continue;
+
+                    int signSize = 16;
+                    GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SPEED_SIGN, cx - signSize / 2, cy - signSize / 2, signSize, signSize);
+                    Component limComp = GMSettingsScreen.uText(Integer.toString(cam.effectiveSpeedLimit()));
+                    GMSettingsScreen.drawCenteredFittedText(graphics, this.font, limComp, cx, cy - 4, 10, 0xFF0F172A, false);
+
+                    if (Math.abs(mouseX - cx) <= 8 && Math.abs(mouseY - cy) <= 8) {
+                        hoveredTooltip = new ArrayList<>();
+                        hoveredTooltip.add(GMSettingsScreen.uText(I18n.get("gm-addon.screen.map.tooltip_camera", cam.name())));
+                        hoveredTooltip.add(GMSettingsScreen.uText(I18n.get("gm-addon.screen.map.tooltip_limit", cam.effectiveSpeedLimit())));
+                        hoveredTooltip.add(GMSettingsScreen.uText(String.format(Locale.ROOT, "Pos: %d, %d, %d",
+                            (int) Math.round(cam.x()), (int) Math.round(cam.y()), (int) Math.round(cam.z()))));
+                    }
+                }
+            }
+        }
+
+        // Render Player marker using bilinear-filtered cursor and Modern badge
+        if (smoothPlayerPos != null) {
+            float playerScreenX = (float) (screenCenterX + (smoothPlayerPos.x - centerWorldX) * pixelsPerBlock);
+            float playerScreenY = (float) (screenCenterY + (smoothPlayerPos.z - centerWorldZ) * pixelsPerBlock);
+            int px = Math.round(playerScreenX);
+            int py = Math.round(playerScreenY);
+
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(playerScreenX, playerScreenY);
             if ("DOT".equalsIgnoreCase(cfg.minimapPlayerMarkerShape)) {
                 GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_PLAYER_DOT, -7, -7, 14, 14);
             } else {
@@ -370,15 +414,23 @@ public class FullscreenMapScreen extends Screen {
         double cursorWorldX = centerWorldX + (mouseX - screenCenterX) / pixelsPerBlock;
         double cursorWorldZ = centerWorldZ + (mouseY - screenCenterY) / pixelsPerBlock;
         double roundedZoom = Math.round(pixelsPerBlock * 10.0) / 10.0;
-        String statusLeft = I18n.get(
-            "gm-addon.screen.map.status",
-            (int) Math.floor(cursorWorldX),
-            (int) Math.floor(cursorWorldZ),
-            roundedZoom,
-            lod,
-            addon.getTileClient().getLoadedTileCount(),
-            addon.getTileClient().getPendingRequestCount()
-        );
+        String statusLeft = useSurfaceMap
+            ? String.format(
+                Locale.ROOT,
+                "X: %d | Z: %d | Zoom: %.1fx | Farmwelt",
+                (int) Math.floor(cursorWorldX),
+                (int) Math.floor(cursorWorldZ),
+                roundedZoom
+            )
+            : I18n.get(
+                "gm-addon.screen.map.status",
+                (int) Math.floor(cursorWorldX),
+                (int) Math.floor(cursorWorldZ),
+                roundedZoom,
+                lod,
+                addon.getTileClient().getLoadedTileCount(),
+                addon.getTileClient().getPendingRequestCount()
+            );
         String dbStatus = addon.getCameraRepository().getSyncStatus();
         Component dbComp = GMSettingsScreen.uText(dbStatus);
         int dbW = Math.min(this.width / 3, this.font.width(dbComp));

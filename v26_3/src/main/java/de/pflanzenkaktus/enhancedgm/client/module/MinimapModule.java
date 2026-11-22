@@ -132,6 +132,11 @@ public class MinimapModule implements ClientFeatureModule {
     }
 
     @Override
+    public void onChatMessage(GMAddonClient addon, String plainMessage) {
+        addon.getWorldContextTracker().onChatMessage(plainMessage);
+    }
+
+    @Override
     public void renderHudWidget(GMAddonClient addon, GuiGraphicsExtractor graphics, Minecraft mc, float partialTick, boolean editorPreview) {
         addon.getHudRenderer().renderMinimapWidget(graphics, mc, partialTick, editorPreview);
     }
@@ -147,6 +152,17 @@ public class MinimapModule implements ClientFeatureModule {
                 () -> cfg.minimapEnabled,
                 val -> {
                     cfg.minimapEnabled = val;
+                    addon.saveConfig();
+                }
+            ),
+            new Setting.CycleSetting(
+                "minimap_map_mode",
+                I18n.get("gm-addon.setting.minimap.map_mode"),
+                I18n.get("gm-addon.setting.minimap.map_mode.desc"),
+                List.of("AUTO", "BLUEMAP", "SURFACE"),
+                () -> cfg.minimapMapMode != null ? cfg.minimapMapMode.toUpperCase() : "AUTO",
+                val -> {
+                    cfg.minimapMapMode = val;
                     addon.saveConfig();
                 }
             ),
@@ -306,6 +322,7 @@ public class MinimapModule implements ClientFeatureModule {
         cfg.minimapShowSpeedAndHints = true;
         cfg.minimapPlayerMarkerShape = "ARROW";
         cfg.minimapPlayerMarkerScale = 1.0f;
+        cfg.minimapMapMode = "AUTO";
         cfg.showSpeedCamerasOnMap = true;
         cfg.showBlueMapMarkersOnMap = true;
         cfg.enabledMarkerSets = new java.util.ArrayList<>(java.util.Arrays.asList(

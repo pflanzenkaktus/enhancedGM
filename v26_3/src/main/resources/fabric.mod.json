@@ -7,7 +7,7 @@
   "authors": [
     "pflanzenkaktus"
   ],
-  "license": "All-Rights-Reserved",
+  "license": "AGPL-3.0-only",
   "icon": "assets/gm-addon/icon.png",
   "environment": "client",
   "entrypoints": {

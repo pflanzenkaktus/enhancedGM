@@ -127,7 +127,7 @@ gm-addon/
 ```bash
 ./gradlew test build
 ```
-The compiled mod JAR will be located at `v26_3/build/libs/enhancedGM-0.4.2.jar`.
+The compiled mod JAR will be located at `v26_3/build/libs/enhancedGM-0.4.3.jar`.
 
 ### 2. Install to Minecraft Fabric Profile
 Copy the generated JAR from `v26_3/build/libs/` into your Minecraft profile's `mods/` directory.
@@ -145,4 +145,8 @@ Copy the generated JAR from `v26_3/build/libs/` into your Minecraft profile's `m
 
 ## License
 
-All Rights Reserved. Copyright (c) 2026 pflanzenkaktus. See [LICENSE](LICENSE) for details.
+Copyright (c) 2026 pflanzenkaktus.
+
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0-only)**. See [LICENSE](../LICENSE) for the full license text, warranty disclaimer (Section 15), and limitation of liability (Sections 16-17).
+
+Third-party assets (such as the ERA ETCS acoustic audio samples listed above) remain subject to their respective third-party attributions and terms and are not relicensed under AGPL-3.0.

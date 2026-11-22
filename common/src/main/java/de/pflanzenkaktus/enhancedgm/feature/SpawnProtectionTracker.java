@@ -3,12 +3,15 @@ package de.pflanzenkaktus.enhancedgm.feature;
 import de.pflanzenkaktus.enhancedgm.config.AddonConfig;
 
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * Tracks the player's Spawn / Respawn Protection ("Spawnschutz") countdown timer
  * (default 20 seconds, configurable in AddonConfig).
  */
 public class SpawnProtectionTracker {
+    private static final Pattern COLOR_STRIP_PATTERN = Pattern.compile("[§&][0-9a-fk-orxA-FK-ORX]");
+
     private final AddonConfig config;
     private long startTimestampMs = 0L;
     private long durationMs = 0L;
@@ -20,13 +23,19 @@ public class SpawnProtectionTracker {
 
     public void triggerOnServerJoin() {
         if (config.triggerSpawnProtectionOnJoin) {
-            startTimer(config.spawnProtectionSeconds, "Login-Spawnschutz");
+            long targetMs = config.spawnProtectionSeconds * 1000L;
+            if (getRemainingMillis() < targetMs) {
+                startTimer(config.spawnProtectionSeconds, "Login-Spawnschutz");
+            }
         }
     }
 
     public void triggerOnRespawn() {
         if (config.triggerSpawnProtectionOnRespawn) {
-            startTimer(config.spawnProtectionSeconds, "Respawn-Schutz");
+            long targetMs = config.spawnProtectionSeconds * 1000L;
+            if (getRemainingMillis() < targetMs) {
+                startTimer(config.spawnProtectionSeconds, "Respawn-Schutz");
+            }
         }
     }
 
@@ -44,24 +53,36 @@ public class SpawnProtectionTracker {
     }
 
     /**
-     * Optional chat listener to detect server-side Spawnschutz and hospital/revive protection messages.
+     * Chat listener to detect server-side Spawnschutz and hospital/revive protection messages.
      */
     public void onChatMessage(String plainMessage) {
         if (plainMessage == null || plainMessage.isBlank()) {
             return;
         }
-        String lower = plainMessage.toLowerCase(Locale.ROOT);
-        // Ignore player chat messages (containing '»', ':', channel tags, or player names)
-        if (lower.contains("»") || lower.contains("global") || lower.contains("lokal")
-            || lower.contains("funk") || lower.contains("zivilist") || lower.contains("bandito")) {
+        String clean = COLOR_STRIP_PATTERN.matcher(plainMessage).replaceAll("").trim();
+        String lower = clean.toLowerCase(Locale.ROOT);
+
+        // Ignore player chat channels, broadcasts, and player-authored lines with a name before '»'
+        if (lower.contains("globalchat") || lower.contains("[zivilist]") || lower.contains("[bandito]")
+            || lower.contains("megafon") || lower.contains("werbung")
+            || lower.contains("[lokal]") || lower.contains("[funk]")) {
             return;
         }
-        if (lower.contains("spawnschutz") && (lower.contains("beendet") || lower.contains("abgelaufen") || lower.contains("deaktiviert"))) {
+        if (clean.contains("»")) {
+            String prefix = clean.substring(0, clean.indexOf('»')).trim();
+            if (!prefix.isEmpty() && prefix.matches(".*[a-zA-ZäöüÄÖÜß].*")) {
+                return;
+            }
+        }
+
+        if (lower.contains("nicht mehr im pvp-schutz")
+            || (lower.contains("spawnschutz") && (lower.contains("beendet") || lower.contains("abgelaufen") || lower.contains("deaktiviert")))) {
             cancelTimer();
+        } else if (lower.contains("2 minuten keinen schaden erhalten")
+            || (lower.contains("krankenhaus gebracht") && lower.contains("keinen schaden"))) {
+            startTimer(120, "Krankenhaus-Schutz");
         } else if (lower.contains("spawnschutz") && (lower.contains("aktiv") || lower.contains("erhalten"))) {
             startTimer(config.spawnProtectionSeconds, "Spawnschutz");
-        } else if (lower.contains("2 minuten keinen schaden erhalten")) {
-            startTimer(120, "Krankenhaus-Schutz");
         }
     }
 

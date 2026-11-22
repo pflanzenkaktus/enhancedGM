@@ -3,6 +3,7 @@ package de.pflanzenkaktus.enhancedgm.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import de.pflanzenkaktus.enhancedgm.client.compat.VersionCompat;
 import de.pflanzenkaktus.enhancedgm.client.map.BlueMapTextureCache;
+import de.pflanzenkaktus.enhancedgm.client.map.LocalTerrainMapCache;
 import de.pflanzenkaktus.enhancedgm.client.module.ModuleManager;
 import de.pflanzenkaktus.enhancedgm.client.render.HudOverlayRenderer;
 import de.pflanzenkaktus.enhancedgm.client.screen.CommunitySyncPromptScreen;
@@ -18,6 +19,7 @@ import de.pflanzenkaktus.enhancedgm.data.SpeedCameraRepository;
 import de.pflanzenkaktus.enhancedgm.feature.BlitzerWarningTracker;
 import de.pflanzenkaktus.enhancedgm.feature.SpawnProtectionTracker;
 import de.pflanzenkaktus.enhancedgm.feature.UpdateChecker;
+import de.pflanzenkaktus.enhancedgm.feature.WorldContextTracker;
 import de.pflanzenkaktus.enhancedgm.map.BlueMapMarkerClient;
 import de.pflanzenkaktus.enhancedgm.map.BlueMapTileClient;
 import net.fabricmc.api.ClientModInitializer;
@@ -56,6 +58,8 @@ public class GMAddonClient implements ClientModInitializer {
     private BlueMapTileClient tileClient;
     private BlueMapMarkerClient markerClient;
     private BlueMapTextureCache textureCache;
+    private LocalTerrainMapCache localTerrainMapCache;
+    private WorldContextTracker worldContextTracker;
     private BlitzerWarningTracker blitzerTracker;
     private SpawnProtectionTracker spawnProtectionTracker;
     private PlotRepository plotRepository;
@@ -82,6 +86,7 @@ public class GMAddonClient implements ClientModInitializer {
     private String lastChatHoverText = "";
     private Component lastActionBarComponent = null;
     private int lastActionBarTime = 0;
+    private Object lastClientLevel = null;
 
     // Anti-spam queue & edge tracking for Tempomat hotkeys
     private boolean wasTempomatToggleDown = false;
@@ -117,6 +122,8 @@ public class GMAddonClient implements ClientModInitializer {
         this.markerClient.refreshAsync();
 
         this.textureCache = new BlueMapTextureCache(tileClient);
+        this.localTerrainMapCache = new LocalTerrainMapCache();
+        this.worldContextTracker = new WorldContextTracker();
         this.blitzerTracker = new BlitzerWarningTracker(config);
         this.spawnProtectionTracker = new SpawnProtectionTracker(config);
         this.hudRenderer = new HudOverlayRenderer(this);
@@ -125,7 +132,7 @@ public class GMAddonClient implements ClientModInitializer {
 
         String currentVersion = FabricLoader.getInstance().getModContainer("gm-addon")
             .map(c -> c.getMetadata().getVersion().getFriendlyString())
-            .orElse("0.4.2");
+            .orElse("0.4.3");
 
         this.updateChecker = new UpdateChecker(config, currentVersion);
         this.updateChecker.setOnUpdateFoundListener(release -> {
@@ -273,6 +280,13 @@ public class GMAddonClient implements ClientModInitializer {
             moduleManager.onServerDisconnect();
             lastPlayerEntityId = -1;
             wasDeadOrDying = false;
+            lastClientLevel = null;
+            if (worldContextTracker != null) {
+                worldContextTracker.onDisconnect();
+            }
+            if (localTerrainMapCache != null) {
+                localTerrainMapCache.clear();
+            }
         });
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
@@ -372,7 +386,23 @@ public class GMAddonClient implements ClientModInitializer {
             wasTempomatMinusDown = false;
             pendingTempomatToggle = false;
             pendingTempomatDeltaSteps = 0;
+            if (client.level == null && lastClientLevel != null) {
+                lastClientLevel = null;
+                localTerrainMapCache.clear();
+            }
             return;
+        }
+
+        if (client.level != lastClientLevel) {
+            lastClientLevel = client.level;
+            worldContextTracker.onLevelInstanceChanged(System.currentTimeMillis());
+            localTerrainMapCache.clear();
+            if (client.level != null) {
+                worldContextTracker.onDimensionState(
+                    net.minecraft.world.level.Level.OVERWORLD.equals(client.level.dimension()),
+                    client.level.dimension().toString()
+                );
+            }
         }
 
         // Action bar texts sent via ClientboundSetActionBarTextPacket bypass the GAME message event,
@@ -461,7 +491,7 @@ public class GMAddonClient implements ClientModInitializer {
             rootEntity.getZ(),
             client.player.getYRot(),
             inVehicle,
-            cameraRepository.getCameras()
+            worldContextTracker.isInFarmWorld() ? java.util.List.of() : cameraRepository.getCameras()
         );
 
         // Detect player respawn
@@ -479,16 +509,50 @@ public class GMAddonClient implements ClientModInitializer {
         moduleManager.onClientTick(client);
 
         tickCounter++;
+        if (tickCounter % 20 == 0 && client.level != null) {
+            pollScoreboardFarmWorld(client);
+        }
+        if (shouldUseSurfaceMinimap() && client.level != null) {
+            localTerrainMapCache.tickUpdate(client);
+        }
         if (tickCounter % 40 == 0) {
             cameraRepository.tickCheckForUpdates();
             markerClient.tickCheckForRefresh();
         }
     }
 
-    public boolean isActiveOnCurrentServer() {
-        if (config.forceEnableEverywhere) {
-            return true;
+    private void pollScoreboardFarmWorld(Minecraft client) {
+        if (client == null || client.level == null) {
+            return;
         }
+        try {
+            net.minecraft.world.scores.Scoreboard sb = client.level.getScoreboard();
+            if (sb == null) {
+                return;
+            }
+            net.minecraft.world.scores.Objective obj = sb.getDisplayObjective(net.minecraft.world.scores.DisplaySlot.SIDEBAR);
+            if (obj == null) {
+                worldContextTracker.onScoreboardText("");
+                return;
+            }
+            StringBuilder text = new StringBuilder();
+            if (obj.getDisplayName() != null) {
+                text.append(obj.getDisplayName().getString()).append(' ');
+            }
+            for (var entry : sb.listPlayerScores(obj)) {
+                if (entry.display() != null) {
+                    text.append(entry.display().getString()).append(' ');
+                }
+                if (entry.owner() != null) {
+                    text.append(entry.owner()).append(' ');
+                }
+            }
+            worldContextTracker.onScoreboardText(text.toString());
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public boolean isOnGermanMinerServer() {
         Minecraft mc = Minecraft.getInstance();
         ServerData serverData = mc.getCurrentServer();
         if (serverData == null || serverData.ip == null) {
@@ -499,6 +563,14 @@ public class GMAddonClient implements ClientModInitializer {
             ? config.serverDomainPattern.toLowerCase(Locale.ROOT)
             : "germanminer.de";
         return ip.contains(pattern);
+    }
+
+    public boolean isActiveOnCurrentServer() {
+        return config.forceEnableEverywhere || isOnGermanMinerServer();
+    }
+
+    public boolean shouldUseSurfaceMinimap() {
+        return worldContextTracker.shouldUseSurfaceMinimap(config.minimapMapMode, isOnGermanMinerServer());
     }
 
     public void saveConfig() {
@@ -527,6 +599,14 @@ public class GMAddonClient implements ClientModInitializer {
 
     public BlueMapTextureCache getTextureCache() {
         return textureCache;
+    }
+
+    public LocalTerrainMapCache getLocalTerrainMapCache() {
+        return localTerrainMapCache;
+    }
+
+    public WorldContextTracker getWorldContextTracker() {
+        return worldContextTracker;
     }
 
     public BlitzerWarningTracker getBlitzerTracker() {

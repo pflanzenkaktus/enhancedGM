@@ -4,6 +4,7 @@ import de.pflanzenkaktus.enhancedgm.config.AddonConfig;
 import de.pflanzenkaktus.enhancedgm.data.SpeedCameraRepository;
 import de.pflanzenkaktus.enhancedgm.feature.BlitzerWarningTracker;
 import de.pflanzenkaktus.enhancedgm.feature.SpawnProtectionTracker;
+import de.pflanzenkaktus.enhancedgm.feature.WorldContextTracker;
 import de.pflanzenkaktus.enhancedgm.map.BlueMapMarkerClient;
 import de.pflanzenkaktus.enhancedgm.map.BlueMapTileClient;
 import de.pflanzenkaktus.enhancedgm.model.BlueMapMarker;
@@ -241,6 +242,30 @@ class CoreSystemsTest {
         assertTrue(tracker.isActive(), "Player chat message with '»' must not cancel Spawnschutz timer");
         tracker.onChatMessage("Dein Spawnschutz ist abgelaufen!");
         assertFalse(tracker.isActive());
+
+        // GermanMiner hospital / death protection with timestamp & formatting codes
+        tracker.onChatMessage("&d[12:15:18] &b&l»&7&l &fℹ&b Du wurdest zu einem Krankenhaus gebracht und kannst für die nächsten 2 Minuten keinen Schaden erhalten bzw. anderen Spielern Schaden zufügen.");
+        assertTrue(tracker.isActive());
+        assertTrue(tracker.getRemainingSeconds() > 118.0);
+        assertEquals("Krankenhaus-Schutz", tracker.getTriggerReason());
+
+        // Respawn fallback (20s) must not shorten an active longer hospital timer (120s)
+        tracker.triggerOnRespawn();
+        assertTrue(tracker.getRemainingSeconds() > 110.0);
+
+        // GermanMiner official PVP-Schutz end notification
+        tracker.onChatMessage("[12:17:18] §b§l»§7§l §fℹ§b Du bist nun nicht mehr im PVP-Schutz.");
+        assertFalse(tracker.isActive());
+
+        // Paid revive 2-minute protection
+        tracker.onChatMessage("§b§l»§7§l §fℹ§b Du wurdest kostenpflichtig wiederbelebt und kannst für die nächsten 2 Minuten keinen Schaden erhalten bzw. anderen Spielern Schaden zufügen.");
+        assertTrue(tracker.isActive());
+        assertTrue(tracker.getRemainingSeconds() > 118.0);
+        tracker.cancelTimer();
+
+        // Player spoofing hospital message must be ignored
+        tracker.onChatMessage("Max » Du wurdest zu einem Krankenhaus gebracht und kannst für die nächsten 2 Minuten keinen Schaden erhalten");
+        assertFalse(tracker.isActive());
     }
 
     @Test
@@ -314,5 +339,63 @@ class CoreSystemsTest {
         assertFalse(loaded.minimapShowSpeedAndHints);
         assertEquals("DOT", loaded.minimapPlayerMarkerShape);
         assertEquals(0.5f, loaded.minimapPlayerMarkerScale, 1e-4f);
+        assertEquals("AUTO", cfg.minimapMapMode);
+    }
+
+    @Test
+    void testWorldContextTrackerFarmWorldAndModes() {
+        WorldContextTracker tracker = new WorldContextTracker();
+        assertFalse(tracker.isInFarmWorld());
+        assertFalse(tracker.shouldUseSurfaceMinimap("AUTO", true));
+        assertTrue(tracker.shouldUseSurfaceMinimap("AUTO", false));
+
+        // Player chat mentioning "farmwelt" must NOT trigger Farmwelt mode
+        tracker.onChatMessage("Globalchat [Zivilist] Easydomii » bin gerade in der farmwelt", 1000L);
+        assertFalse(tracker.isInFarmWorld());
+
+        // Real GermanMiner system message activates Farmwelt mode
+        tracker.onChatMessage("§b§l»§7§l §fℹ§b Du befindest dich nun in der Farmwelt. Mit dem Befehl /rückflug kommst du wieder in die Hauptwelt.", 2000L);
+        assertTrue(tracker.isInFarmWorld());
+        assertTrue(tracker.shouldUseSurfaceMinimap("AUTO", true));
+        assertFalse(tracker.shouldUseSurfaceMinimap("BLUEMAP", true));
+        assertTrue(tracker.shouldUseSurfaceMinimap("SURFACE", true));
+
+        // Level change within 3.5s grace window preserves Farmwelt mode
+        tracker.onLevelInstanceChanged(3000L);
+        assertTrue(tracker.isInFarmWorld());
+
+        // Level change after 3.5s grace window resets chat-detected Farmwelt mode
+        tracker.onLevelInstanceChanged(7000L);
+        assertFalse(tracker.isInFarmWorld());
+
+        // Non-Overworld dimension activates surface minimap
+        tracker.onDimensionState(false, "minecraft:the_nether");
+        assertTrue(tracker.isInFarmWorld());
+        assertTrue(tracker.shouldUseSurfaceMinimap("AUTO", true));
+
+        // Regression check: ResourceKey.toString() includes "ResourceKey[minecraft:dimension / ...]"
+        tracker.onDisconnect();
+        tracker.onDimensionState(true, "ResourceKey[minecraft:dimension / minecraft:overworld]");
+        assertFalse(tracker.isInFarmWorld());
+        assertFalse(tracker.shouldUseSurfaceMinimap("AUTO", true));
+
+        // Real Farmwelt dimension activates surface minimap
+        tracker.onDimensionState(false, "ResourceKey[minecraft:dimension / minecraft:farmwelt]");
+        assertTrue(tracker.isInFarmWorld());
+        assertTrue(tracker.shouldUseSurfaceMinimap("AUTO", true));
+
+        // Returning to main Overworld immediately clears recent Farmwelt chat detection
+        tracker.onChatMessage("§b§l»§7§l §fℹ§b Du befindest dich nun in der Farmwelt. Mit dem Befehl /rückflug kommst du wieder in die Hauptwelt.", 10000L);
+        assertTrue(tracker.isInFarmWorld());
+        tracker.onDimensionState(true, "ResourceKey[minecraft:dimension / minecraft:overworld]");
+        assertFalse(tracker.isInFarmWorld());
+
+        // Sidebar tip mentioning Farmweltreset must not false-positive
+        tracker.onScoreboardText("Farmweltreset: Fr 04:00");
+        assertFalse(tracker.isInFarmWorld());
+
+        // Explicit disconnect reset
+        tracker.onDisconnect();
+        assertFalse(tracker.isInFarmWorld());
     }
 }

@@ -2,6 +2,7 @@ package de.pflanzenkaktus.enhancedgm.client.render;
 
 import de.pflanzenkaktus.enhancedgm.client.GMAddonClient;
 import de.pflanzenkaktus.enhancedgm.client.map.BlueMapTextureCache;
+import de.pflanzenkaktus.enhancedgm.client.map.LocalTerrainMapCache;
 import de.pflanzenkaktus.enhancedgm.client.screen.GMSettingsScreen;
 import de.pflanzenkaktus.enhancedgm.client.screen.HudEditorScreen;
 import de.pflanzenkaktus.enhancedgm.client.util.I18n;
@@ -94,15 +95,18 @@ public class HudOverlayRenderer {
         graphics.fill(viewX, viewY, viewX + viewW, viewY + viewH, 0xFF0B1120);
 
         LocalPlayer player = mc.player;
-        double px = player != null ? player.getX() : -885.0;
-        double py = player != null ? player.getY() : 64.0;
-        double pz = player != null ? player.getZ() : -2005.0;
+        Vec3 smoothPos = player != null ? player.getPosition(partialTick) : null;
+        double px = smoothPos != null ? smoothPos.x : -885.0;
+        double py = smoothPos != null ? smoothPos.y : 64.0;
+        double pz = smoothPos != null ? smoothPos.z : -2005.0;
         float playerYaw = player != null ? player.getViewYRot(partialTick) : 0.0f;
 
         double visibleBlocks = Math.max(40.0, cfg.minimapZoomBlocks);
         double pixelsPerBlock = (double) viewW / visibleBlocks;
-        int centerX = viewX + viewW / 2;
-        int centerY = viewY + viewH / 2;
+        float centerX = viewX + viewW * 0.5f;
+        float centerY = viewY + viewH * 0.5f;
+        int centerXi = viewX + viewW / 2;
+        int centerYi = viewY + viewH / 2;
 
         // Clip map tiles and markers inside the minimap viewport
         graphics.enableScissor(viewX, viewY, viewX + viewW, viewY + viewH);
@@ -114,68 +118,103 @@ public class HudOverlayRenderer {
             graphics.pose().rotate(angleRad);
         }
 
-        double radiusBlocks = (visibleBlocks * 0.75);
-        int lod = 1;
-        int blocksPerTile = BlueMapTileClient.blocksPerTile(lod);
-        int minTileX = BlueMapTileClient.blockToTileCoord(px - radiusBlocks, lod);
-        int maxTileX = BlueMapTileClient.blockToTileCoord(px + radiusBlocks, lod);
-        int minTileZ = BlueMapTileClient.blockToTileCoord(pz - radiusBlocks, lod);
-        int maxTileZ = BlueMapTileClient.blockToTileCoord(pz + radiusBlocks, lod);
+        double radiusBlocks = (visibleBlocks * 0.85);
+        boolean useSurfaceMap = mc.level != null && addon.shouldUseSurfaceMinimap();
 
-        BlueMapTextureCache texCache = addon.getTextureCache();
-        for (int tx = minTileX; tx <= maxTileX; tx++) {
-            for (int tz = minTileZ; tz <= maxTileZ; tz++) {
-                double tileOriginX = (double) tx * blocksPerTile;
-                double tileOriginZ = (double) tz * blocksPerTile;
+        if (useSurfaceMap) {
+            int regionBlocks = LocalTerrainMapCache.REGION_BLOCKS;
+            int minRegX = LocalTerrainMapCache.blockToRegionCoord(px - radiusBlocks);
+            int maxRegX = LocalTerrainMapCache.blockToRegionCoord(px + radiusBlocks);
+            int minRegZ = LocalTerrainMapCache.blockToRegionCoord(pz - radiusBlocks);
+            int maxRegZ = LocalTerrainMapCache.blockToRegionCoord(pz + radiusBlocks);
 
-                int drawX = (int) Math.floor((tileOriginX - px) * pixelsPerBlock);
-                int drawY = (int) Math.floor((tileOriginZ - pz) * pixelsPerBlock);
-                int drawW = (int) Math.ceil(blocksPerTile * pixelsPerBlock) + 1;
-                int drawH = (int) Math.ceil(blocksPerTile * pixelsPerBlock) + 1;
+            double baseOriginX = (double) minRegX * regionBlocks;
+            double baseOriginZ = (double) minRegZ * regionBlocks;
 
-                BlueMapTileClient.TileKey key = new BlueMapTileClient.TileKey(lod, tx, tz);
-                if (!texCache.drawTile(graphics, key, drawX, drawY, drawW, drawH)) {
-                    graphics.fill(drawX, drawY, drawX + drawW, drawY + drawH, 0xFF131C31);
+            graphics.pose().pushMatrix();
+            graphics.pose().scale((float) pixelsPerBlock, (float) pixelsPerBlock);
+            graphics.pose().translate((float) (baseOriginX - px), (float) (baseOriginZ - pz));
+
+            LocalTerrainMapCache terrainCache = addon.getLocalTerrainMapCache();
+            for (int rx = minRegX; rx <= maxRegX; rx++) {
+                for (int rz = minRegZ; rz <= maxRegZ; rz++) {
+                    int localX = (rx - minRegX) * regionBlocks;
+                    int localY = (rz - minRegZ) * regionBlocks;
+
+                    if (!terrainCache.drawRegion(graphics, rx, rz, localX, localY, regionBlocks, regionBlocks)) {
+                        graphics.fill(localX, localY, localX + regionBlocks, localY + regionBlocks, 0xFF0B1120);
+                    }
                 }
             }
-        }
+            graphics.pose().popMatrix();
+        } else {
+            int lod = 1;
+            int blocksPerTile = BlueMapTileClient.blocksPerTile(lod);
+            int minTileX = BlueMapTileClient.blockToTileCoord(px - radiusBlocks, lod);
+            int maxTileX = BlueMapTileClient.blockToTileCoord(px + radiusBlocks, lod);
+            int minTileZ = BlueMapTileClient.blockToTileCoord(pz - radiusBlocks, lod);
+            int maxTileZ = BlueMapTileClient.blockToTileCoord(pz + radiusBlocks, lod);
 
-        // Draw enabled BlueMap POI markers (Tankstellen, Taxipunkte, Haltestellen)
-        if (cfg.showBlueMapMarkersOnMap) {
-            for (BlueMapMarker marker : addon.getMarkerClient().getMarkers()) {
-                if (!cfg.enabledMarkerSets.contains(marker.categoryId())) continue;
-                double dx = marker.x() - px;
-                double dz = marker.z() - pz;
-                if (Math.abs(dx) > radiusBlocks || Math.abs(dz) > radiusBlocks) continue;
+            double baseOriginX = (double) minTileX * blocksPerTile;
+            double baseOriginZ = (double) minTileZ * blocksPerTile;
 
-                int mx = (int) Math.round(dx * pixelsPerBlock);
-                int my = (int) Math.round(dz * pixelsPerBlock);
-                graphics.fill(mx - 2, my - 2, mx + 3, my + 3, 0xCC000000);
-                graphics.fill(mx - 1, my - 1, mx + 2, my + 2, marker.colorArgb());
+            graphics.pose().pushMatrix();
+            graphics.pose().scale((float) pixelsPerBlock, (float) pixelsPerBlock);
+            graphics.pose().translate((float) (baseOriginX - px), (float) (baseOriginZ - pz));
+
+            BlueMapTextureCache texCache = addon.getTextureCache();
+            for (int tx = minTileX; tx <= maxTileX; tx++) {
+                for (int tz = minTileZ; tz <= maxTileZ; tz++) {
+                    int localX = (tx - minTileX) * blocksPerTile;
+                    int localY = (tz - minTileZ) * blocksPerTile;
+
+                    BlueMapTileClient.TileKey key = new BlueMapTileClient.TileKey(lod, tx, tz);
+                    if (!texCache.drawTile(graphics, key, localX, localY, blocksPerTile, blocksPerTile)) {
+                        graphics.fill(localX, localY, localX + blocksPerTile, localY + blocksPerTile, 0xFF131C31);
+                    }
+                }
             }
-        }
+            graphics.pose().popMatrix();
 
-        // Draw Speed Cameras ("Blitzer") on the minimap using 128x128 HD circular speed sign texture
-        if (cfg.showSpeedCamerasOnMap) {
-            BlitzerWarningTracker.BlitzerAlert activeAlert = addon.getBlitzerTracker().getCurrentAlert();
-            for (SpeedCamera cam : addon.getCameraRepository().getCameras()) {
-                double dx = cam.x() - px;
-                double dz = cam.z() - pz;
-                if (Math.abs(dx) > radiusBlocks || Math.abs(dz) > radiusBlocks) continue;
+            // Draw enabled BlueMap POI markers (Tankstellen, Taxipunkte, Haltestellen)
+            if (cfg.showBlueMapMarkersOnMap) {
+                for (BlueMapMarker marker : addon.getMarkerClient().getMarkers()) {
+                    if (!cfg.enabledMarkerSets.contains(marker.categoryId())) continue;
+                    double dx = marker.x() - px;
+                    double dz = marker.z() - pz;
+                    if (Math.abs(dx) > radiusBlocks || Math.abs(dz) > radiusBlocks) continue;
 
-                int cx = (int) Math.round(dx * pixelsPerBlock);
-                int cy = (int) Math.round(dz * pixelsPerBlock);
-                boolean isAlerted = activeAlert != null && activeAlert.camera().id().equals(cam.id());
+                    graphics.pose().pushMatrix();
+                    graphics.pose().translate((float) (dx * pixelsPerBlock), (float) (dz * pixelsPerBlock));
+                    graphics.fill(-2, -2, 3, 3, 0xCC000000);
+                    graphics.fill(-1, -1, 2, 2, marker.colorArgb());
+                    graphics.pose().popMatrix();
+                }
+            }
 
-                int iconSize = (isAlerted && (System.currentTimeMillis() / 250L) % 2L == 0L) ? 12 : 9;
-                GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SPEED_SIGN, cx - iconSize / 2, cy - iconSize / 2, iconSize, iconSize);
+            // Draw Speed Cameras ("Blitzer") on the minimap using circular speed sign texture
+            if (cfg.showSpeedCamerasOnMap) {
+                BlitzerWarningTracker.BlitzerAlert activeAlert = addon.getBlitzerTracker().getCurrentAlert();
+                for (SpeedCamera cam : addon.getCameraRepository().getCameras()) {
+                    double dx = cam.x() - px;
+                    double dz = cam.z() - pz;
+                    if (Math.abs(dx) > radiusBlocks || Math.abs(dz) > radiusBlocks) continue;
+
+                    boolean isAlerted = activeAlert != null && activeAlert.camera().id().equals(cam.id());
+                    int iconSize = (isAlerted && (System.currentTimeMillis() / 250L) % 2L == 0L) ? 12 : 9;
+
+                    graphics.pose().pushMatrix();
+                    graphics.pose().translate((float) (dx * pixelsPerBlock), (float) (dz * pixelsPerBlock));
+                    GMSettingsScreen.drawTexture(graphics, GMSettingsScreen.TEX_SPEED_SIGN, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+                    graphics.pose().popMatrix();
+                }
             }
         }
 
         graphics.pose().popMatrix();
         graphics.disableScissor();
 
-        // Draw Player Cursor in the exact center of the minimap using 128x128 bilinear-filtered HD textures
+        // Draw Player Cursor in the exact center of the minimap
         graphics.pose().pushMatrix();
         graphics.pose().translate(centerX, centerY);
 
@@ -200,8 +239,8 @@ public class HudOverlayRenderer {
             ? Math.toRadians(180.0 - playerYaw - 90.0)
             : Math.toRadians(-90.0);
         int compassRadius = Math.max(10, (viewW / 2) - 7);
-        int nx = centerX + (int) Math.round(Math.cos(northAngleRad) * compassRadius);
-        int ny = centerY + (int) Math.round(Math.sin(northAngleRad) * compassRadius);
+        int nx = centerXi + (int) Math.round(Math.cos(northAngleRad) * compassRadius);
+        int ny = centerYi + (int) Math.round(Math.sin(northAngleRad) * compassRadius);
         nx = Math.clamp(nx, viewX + 7, viewX + viewW - 7);
         ny = Math.clamp(ny, viewY + 7, viewY + viewH - 7);
         GMSettingsScreen.drawNineSlice(graphics, GMSettingsScreen.TEX_HUD_ALERT_RED, nx - 6, ny - 6, 12, 12, 4);
@@ -341,7 +380,9 @@ public class HudOverlayRenderer {
         } else {
             label = I18n.get("gm-addon.hud.spawn_protection.generic");
         }
-        String timeStr = String.format(Locale.ROOT, "%.1fs", remainingSec);
+        String timeStr = remainingSec >= 60.0
+            ? String.format(Locale.ROOT, "%d:%02d", (int) (remainingSec / 60.0), (int) (remainingSec % 60.0))
+            : String.format(Locale.ROOT, "%.1fs", remainingSec);
 
         int width = 210;
         int height = 34;

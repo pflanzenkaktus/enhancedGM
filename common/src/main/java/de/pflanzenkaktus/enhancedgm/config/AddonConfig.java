@@ -46,6 +46,7 @@ public class AddonConfig {
     public boolean minimapShowSpeedAndHints = true;
     public String minimapPlayerMarkerShape = "ARROW"; // "ARROW" or "DOT"
     public float minimapPlayerMarkerScale = 1.0f; // 0.2f - 2.0f
+    public String minimapMapMode = "AUTO"; // "AUTO", "BLUEMAP", "SURFACE"
     public boolean showSpeedCamerasOnMap = true;
     public boolean showBlueMapMarkersOnMap = true;
     public List<String> enabledMarkerSets = new ArrayList<>(Arrays.asList(

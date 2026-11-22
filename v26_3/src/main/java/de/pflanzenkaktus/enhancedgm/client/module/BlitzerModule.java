@@ -205,7 +205,7 @@ public class BlitzerModule implements ClientFeatureModule {
             if (cfg.blitzerOnlyInVehicle && (mc.player == null || (!mc.player.isPassenger() && mc.player.getVehicle() == null))) {
                 return;
             }
-            if (addon.getBlitzerTracker().isAircraft()) {
+            if (addon.getBlitzerTracker().isAircraft() || addon.getWorldContextTracker().isInFarmWorld()) {
                 return;
             }
             addon.getHudRenderer().render3dWorldBlitzerMarkers(graphics, mc, partialTick);
@@ -214,6 +214,9 @@ public class BlitzerModule implements ClientFeatureModule {
 
     @Override
     public void renderHudWidget(GMAddonClient addon, GuiGraphicsExtractor graphics, Minecraft mc, float partialTick, boolean editorPreview) {
+        if (!editorPreview && addon.getWorldContextTracker().isInFarmWorld()) {
+            return;
+        }
         addon.getHudRenderer().renderBlitzerAlertWidget(graphics, mc, editorPreview);
     }
 
